@@ -2,7 +2,8 @@ import sys
 import re
 
 from PySide6 import QtWidgets, QtGui, QtCore
-from PySide6.QtWidgets import QDialog, QMessageBox, QCompleter, QLabel
+from PySide6.QtCore import Qt
+from PySide6.QtWidgets import QDialog, QMessageBox, QCompleter, QLabel, QVBoxLayout, QPushButton, QWidget
 import sqlite3
 from datetime import datetime
 
@@ -106,7 +107,7 @@ car_dict = {
 class CarEntryDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
-        self.setWindowTitle("Car Entry")
+        self.setWindowTitle("ავტომობილის სადგომზე დამატება")
         self.setStyleSheet("""
             QDialog {
                 background-color: #f0f0f0;
@@ -147,11 +148,11 @@ class CarEntryDialog(QDialog):
         layout.setSpacing(20)
 
         self.car_make_entry = QtWidgets.QLineEdit()
-        self.car_make_entry.setPlaceholderText("Enter car make")
+        self.car_make_entry.setPlaceholderText("შეიყვანე მარკა")
         self.car_model_entry = QtWidgets.QLineEdit()
-        self.car_model_entry.setPlaceholderText("Enter car model")
+        self.car_model_entry.setPlaceholderText("შეიყვანე მოდელი")
         self.vin_code_entry = QtWidgets.QLineEdit()
-        self.vin_code_entry.setPlaceholderText("Enter VIN code")
+        self.vin_code_entry.setPlaceholderText("შეიყვანე VIN კოდი")
         # Adjust mask as needed for VIN format
 
         # Completer for car make entry
@@ -171,9 +172,9 @@ class CarEntryDialog(QDialog):
         self.make_completer.activated.connect(lambda: self.car_model_entry.setFocus())
         self.model_completer.activated.connect(lambda: self.vin_code_entry.setFocus())
 
-        layout.addRow("Make:", self.car_make_entry)
-        layout.addRow("Model:", self.car_model_entry)
-        layout.addRow("VIN Code:", self.vin_code_entry)
+        layout.addRow("მარკა:", self.car_make_entry)
+        layout.addRow("მოდელი:", self.car_model_entry)
+        layout.addRow("VIN კოდი:", self.vin_code_entry)
 
         buttons = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel)
         buttons.accepted.connect(self.validate_and_accept)
@@ -202,31 +203,31 @@ class CarEntryDialog(QDialog):
         vin_code = self.vin_code_entry.text().strip().upper()
 
         if not car_make or not car_model or not vin_code:
-            self.show_warning("Please fill in all fields.")
+            self.show_warning("გთხოვთ შეავსოთ ყველა ველი.")
             return
 
         if car_make not in car_dict or car_model.lower() not in map(str.lower, car_dict[car_make]):
-            confirm_dialog = self.show_confirm("Model not found. Do you want to add it?")
+            confirm_dialog = self.show_confirm("ეს მოდელი ვერ ვიპოვე სიაში. მაინც დავამატო?")
             if confirm_dialog == QMessageBox.Yes:
                 self.accept()
         else:
             vin_regex = re.compile(
-                r'^[A-HJ-NPR-Za-hj-npr-z\d]{8}[\dX][A-HJ-NPR-Za-hj-npr-z\d]{2}\d{6}$')  # Basic VIN format validation
+                r'^[A-HJ-NPR-Za-hj-npr-z\d]{8}[\dX][A-HJ-NPR-Za-hj-npr-zm\d]{2}\d{6}$')  # Basic VIN format validation
             if not vin_regex.match(vin_code):
-                self.show_warning("Invalid VIN Code.")
+                self.show_warning("არასწორი VIN კოდი.")
             else:
-                confirm_vin_dialog = self.show_confirm(f"Is the VIN Code '{vin_code}' correct?")
+                confirm_vin_dialog = self.show_confirm(f"{vin_code} სწორია?")
                 if confirm_vin_dialog == QMessageBox.Yes:
                     if not self.vin_code_exists_in_current(vin_code):
                         self.accept()
                     else:
-                        self.show_warning("Car with this VIN Code is already parked.")
+                        self.show_warning("ავტომობილი ამ VIN კოდით უკვე დამატებულია.")
 
     def show_warning(self, message):
-        QMessageBox.warning(self, "Warning", message)
+        QMessageBox.warning(self, "გაბრთხილება", message)
 
     def show_confirm(self, message):
-        return QMessageBox.question(self, "Confirmation", message, QMessageBox.Yes | QMessageBox.No)
+        return QMessageBox.question(self, "დაადასტურე", message, QMessageBox.Yes | QMessageBox.No)
 
     def vin_code_exists_in_current(self, vin_code):
         conn = sqlite3.connect('parking_system.db')
@@ -247,7 +248,7 @@ class ParkingSpot(QtWidgets.QPushButton):
     def refresh_earnings(self):
         earnings_label = self.parent().findChild(QLabel)
         if earnings_label:
-            earnings_label.setText(f"Today's earnings: {self.get_today_earnings()} Lari")
+            earnings_label.setText(f"დღის ნავაჭრია {self.get_today_earnings()} ლარი")
 
     def __init__(self, id, parent=None):
         super().__init__(parent)
@@ -259,7 +260,7 @@ class ParkingSpot(QtWidgets.QPushButton):
         self.car_model = None
         self.vin_code = None
         self.total_fee = None
-        self.setText(f'Spot {self.id}')
+        self.setText(f'ადგილი {self.id}')
         self.setStyleSheet("background-color: green; color: white; font-weight: bold; font-size: 14px;")
         self.setMinimumHeight(50)
         self.setMinimumWidth(100)
@@ -282,48 +283,164 @@ class ParkingSpot(QtWidgets.QPushButton):
                 self.car_model = car_model
                 self.vin_code = vin_code
                 self.setStyleSheet("background-color: red; color: white; font-weight: bold; font-size: 14px;")
-                self.setText(f'{self.car_make}\n{self.car_model}\n{self.vin_code}')
+                self.setText(f'{self.car_make} {self.car_model}\n{self.vin_code}')
                 entry_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
                 self.db_conn.execute(
                     'INSERT INTO parking (car_make, car_model, vin_code, entry_time, spot_id) VALUES (?, ?, ?, ?, ?)',
                     (car_make, car_model, vin_code, entry_time, self.id))
                 self.db_conn.commit()
+                self.refresh_earnings()
+                self.refresh_spot_status()
+
+
 
     def confirm_remove_car(self):
+
+        # Fetch car entry information from the database
         entry_info = self.db_conn.execute(
             'SELECT entry_time, car_make, car_model, vin_code FROM parking WHERE spot_id = ? AND exit_time IS NULL',
             (self.id,)).fetchone()
 
+        # Check if car information is not found or already checked out
         if entry_info is None or entry_info[0] is None:
-            self.show_warning("Car has already exited.")
+            self.show_warning("მანქანა უკვე გამოსულია.")
             return
+
+        # Extract car details and calculate parking duration
         entry_time_str, car_make, car_model, vin_code = entry_info
         entry_time = datetime.strptime(entry_time_str, "%Y-%m-%d %H:%M:%S")
         exit_time = datetime.now()
         parking_duration = exit_time - entry_time
         total_days = parking_duration.days
-        self.total_fee = max(total_days * 5, 5)
+        self.total_fee = max(total_days * 5, 5)  # Calculate total fee
 
-        payment_info = f"Car Make: {car_make}\nModel: {car_model}\nVIN Code: {vin_code}\nDays: {total_days}\nTotal Fee: {self.total_fee} Lari"
-        reply = QMessageBox.question(self, "Payment", payment_info + "\nDo you want to exit the car?",
-                                     QMessageBox.Yes | QMessageBox.No)
-        if reply == QMessageBox.Yes:
-            confirm_dialog = QMessageBox.question(self, "Confirmation", "Are you sure you want to remove the car?",
-                                                  QMessageBox.Yes | QMessageBox.No)
-            if confirm_dialog == QMessageBox.Yes:
-                self.exit_car()
+        # Prepare payment information
+        payment_info = f"<html><head/><body><p><span style='font-weight:600;'>ავტომობილის მოდელი:</span> {car_make}</p>" \
+                       f"<p><span style='font-weight:600;'>ავტომობილის მარკა:</span> {car_model}</p>" \
+                       f"<p><span style='font-weight:600;'>VIN კოდი:</span> {vin_code}</p>" \
+                       f"<p><span style='font-weight:600;'>ავტომობილი სადგომზე იმყოფებოდა:</span> {total_days} დღე</p>" \
+                       f"<p style='margin-top:20px;'><span style='font-size:18px; font-weight:700;'>სულ გადასახდელია:</span> <span style='font-size:24px; color:#4A90E2;'>{self.total_fee} ლარი</span></p></body></html>"
 
+        # Create new dialog
+        dialog = QDialog(self)
+        dialog.setWindowTitle("ავტომობილის გადასახადის შესახებ ინფორმაცია")
+        dialog.setFixedSize(500, 500)
+        dialog.setStyleSheet("""
+            QDialog {
+                background-color: #FFFFFF; /* White background for a modern look */
+                color: #000000; /* Black text for readability */
+            }
+            QLabel {
+                font-size: 16px; /* Text size */
+                background-color: #F0F0F0; /* Light grey background for the label */
+                padding: 20px;
+                border-radius: 10px;
+                border: 2px solid #E0E0E0; /* Light grey border */
+            }
+            QPushButton {
+                background-color: #4A90E2; /* Blue color for buttons */
+                color: white;
+                font-weight: medium;
+                font-size: 16px;
+                padding: 15px 30px;
+                border: none;
+                border-radius: 5px;
+                margin-top: 25px;
+            }
+            QPushButton:hover {
+                background-color: #357ABD; /* Darker shade on hover */
+            }
+        """)
+
+        # Create layout and widgets
+        # Create layout and widgets
+        layout = QVBoxLayout()
+        info_widget = QWidget()  # Use a QWidget to contain the label for styling
+        info_widget_layout = QVBoxLayout(info_widget)
+        info_widget_layout.setAlignment(Qt.AlignCenter)  # Center the information
+
+        # Set the style for the information container
+        info_widget.setStyleSheet("""
+            background-color: #F0F0F0; /* Light grey background */
+            border-radius: 15px; /* Rounded corners */
+            border: 2px solid #E0E0E0; /* Light grey border */
+            padding: 20px;
+        """)
+
+        info_label = QLabel(payment_info)
+        info_label.setAlignment(Qt.AlignCenter)  # Center align the text within the label
+        info_label.setStyleSheet("""
+            font-size: 16px; /* Adjusted text size for clarity */
+            color: #000000; /* Black text for readability against the light background */
+        """)
+        info_widget_layout.addWidget(info_label)
+        layout.addWidget(info_widget)
+
+        # Create and style the 'Finish Parking' button
+        finish_button = QPushButton("პარკინგის დასრულება")
+        finish_button.setStyleSheet("""
+            background-color: #4A90E2; /* Consistent blue color for action buttons */
+            color: white;
+            font-weight: bold;
+            font-size: 16px;
+            padding: 12px 24px;
+            border-radius: 5px;
+            margin-top: 20px;
+        """)
+        finish_button.clicked.connect(lambda: self.user_confirmed_exit(dialog, True))
+        layout.addWidget(finish_button)
+
+        # Optionally add a 'Cancel' button
+        cancel_button = QPushButton("გაუქმება")
+        cancel_button.setStyleSheet("""
+            background-color: #CCCCCC; /* Grey color for cancel button */
+            color: #333333; /* Dark grey text */
+            font-weight: normal;
+            font-size: 16px;
+            padding: 12px 24px;
+            border-radius: 5px;
+            margin-top: 10px;
+        """)
+        cancel_button.clicked.connect(lambda: self.user_confirmed_exit(dialog, False))
+        layout.addWidget(cancel_button)
+
+        # Set dialog layout
+        dialog.setLayout(layout)
+        dialog.exec_()
+
+    def user_confirmed_exit(self, dialog, confirmed):
+        dialog.close()
+        if confirmed:
+            # User confirmed to exit car
+            self.exit_car()
+
+
+    def show_warning(self, message):
+        # Create a separate method for showing warnings if you don't have it already
+        warning_dialog = QDialog(self)
+        warning_dialog.setWindowTitle("გაფრთხილება")
+        warning_dialog.setFixedSize(400, 200)
+        warning_dialog.setStyleSheet("background-color: #2b2b2b; color: white;")
+        layout = QVBoxLayout()
+        label = QLabel(message)
+        label.setStyleSheet("font-size: 16px;")
+        layout.addWidget(label)
+        ok_button = QPushButton("OK")
+        ok_button.clicked.connect(warning_dialog.close)
+        layout.addWidget(ok_button)
+        warning_dialog.setLayout(layout)
+        warning_dialog.exec_()
     def exit_car(self):
         entry_info = self.db_conn.execute(
             'SELECT entry_time, car_make, car_model, vin_code FROM parking WHERE spot_id = ? AND exit_time IS NULL',
             (self.id,)).fetchone()
         if entry_info is None or entry_info[0] is None:
-            self.show_warning("Car has already exited.")
+            self.show_warning("ავტომობილი უკვე გამოსულია სადგომიდან.")
             return
         entry_time_str, car_make, car_model, vin_code = entry_info
         self.is_occupied = False
         self.setStyleSheet("background-color: green; color: white; font-weight: bold; font-size: 14px;")
-        self.setText(f'Spot {self.id}')
+        self.setText(f'ადგილი {self.id}')
         entry_time = datetime.strptime(entry_time_str, "%Y-%m-%d %H:%M:%S")
         exit_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         parking_duration = datetime.strptime(exit_time, "%Y-%m-%d %H:%M:%S") - entry_time
@@ -343,20 +460,43 @@ class ParkingSpot(QtWidgets.QPushButton):
         self.db_conn.commit()
 
         self.refresh_earnings()
+        self.refresh_spot_status()
 
     def refresh_spot_status(self):
+
         car_info = self.db_conn.execute(
             'SELECT car_make, car_model, vin_code FROM parking WHERE spot_id = ? AND exit_time IS NULL',
             (self.id,)).fetchone()
         if car_info:
             self.is_occupied = True
             self.car_make, self.car_model, self.vin_code = car_info
-            self.setStyleSheet("background-color: red; color: white; font-weight: bold; font-size: 14px;")
-            self.setText(f'{self.car_make}\n{self.car_model}\n{self.vin_code}')
+            # Updated styles for occupied spots
+            self.setStyleSheet("""
+                background-color: #D22F2F; /* Darker red for occupied spot */
+                color: white;
+                font-weight: 200; /* Extra bold font */
+                font-size: 20px; /* Increased font size for better visibility */
+                padding: 20px; /* Add more padding for a larger button */
+                border-radius: 15px; /* Rounded corners for a smoother look */
+                min-height: 40px; /* Minimum button height */
+                min-width: 40px; /* Minimum button width */
+            """)
+            self.setText(f'ადგილი {self.id}')
         else:
             self.is_occupied = False
-            self.setStyleSheet("background-color: green; color: white; font-weight: bold; font-size: 14px;")
-            self.setText(f'Spot {self.id}')
+            # Updated styles for unoccupied spots
+            self.setStyleSheet("""
+                background-color: #004225; /* Darker green for available spot */
+                color: white;
+                font-weight: 200; /* Extra bold font */
+                font-size: 20px; /* Consistent increased font size */
+                padding: 20px; /* Consistent padding with occupied spots */
+                border-radius: 15px; /* Consistent rounded corners */
+                min-height: 40px; /* Consistent minimum button height */
+                min-width: 40px; /* Consistent minimum button width */
+            """)
+            self.setText(f'ადგილი {self.id}')
+
 
     @staticmethod
     def get_today_earnings():
@@ -404,64 +544,113 @@ def init_db():
     conn_history.close()
 
 
+
+class CustomButton(QtWidgets.QPushButton):
+    class CustomButton(QtWidgets.QPushButton):
+        def __init__(self, text, parent=None):
+            super().__init__(text, parent)
+            self.setFixedSize(90, 30)  # Set fixed size for small buttons
+            self.setStyleSheet("""
+                QPushButton {
+                    background-color: transparent;
+                    border: none;
+                    color: #ff0000; /* Set text color to dark red */
+                }
+                QPushButton:hover {
+                    color: #ff5555; /* Lighter red color on hover */
+                }
+            """)
+
+
+class MainApplication(QtWidgets.QWidget):
+    def __init__(self):
+        super().__init__()
+        self.init_ui()
+
+    def init_ui(self):
+        self.setWindowTitle("Parking System")
+        self.setStyleSheet("""
+            /* Base styles */
+            QWidget {
+                background-color: #1e1e1e; /* Darker background for better contrast */
+                color: #ffffff; /* Lighter text for better readability */
+            }
+            QLabel {
+                color: #e1e1e1; /* Lighter color for better readability */
+                font-size: 16pt; /* Larger font size */
+                margin-top: 20px; /* Space above the label */
+            }
+            /* Add your other styles here */
+            QPushButton[type="primary"]:hover {
+                background-color: #ff5555; /* Lighter red color on hover */
+            }
+            QPushButton[type="secondary"]:hover {
+                background-color: #3CB371; /* Lighter green color on hover */
+            }
+        """)
+
+        self.control_layout = QtWidgets.QHBoxLayout()
+        self.minimize_button = CustomButton("ჩაკეცვა")
+        self.exit_button = CustomButton("გამორთვა")
+
+        self.control_layout.addStretch(1)  # Add stretchable space before buttons
+        self.control_layout.addWidget(self.minimize_button)
+        self.control_layout.addWidget(self.exit_button)
+
+        self.minimize_button.clicked.connect(self.showMinimized)
+        self.exit_button.clicked.connect(self.confirm_exit)
+
+        self.main_layout = QtWidgets.QVBoxLayout(self)
+        self.setLayout(self.main_layout)
+        self.main_layout.addLayout(self.control_layout)
+
+        # Adjust these numbers based on your screen size and desired layout
+        rows = 9  # Number of rows in the grid
+        cols = 8  # Number of columns in the grid
+        num_buttons = 64  # Total number of parking buttons
+
+        self.layout = QtWidgets.QGridLayout()
+        button_id = 1
+        for row in range(rows):
+            for col in range(cols):
+                if button_id > num_buttons:
+                    break  # Exit if all buttons have been added
+                button = ParkingSpot(str(button_id))
+                self.layout.addWidget(button, row, col)
+                button_id += 1
+
+        self.earnings_label = QtWidgets.QLabel(f"დღის ნავაჭრი: {self.get_today_earnings()} ლარი")
+        self.earnings_label.setAlignment(QtCore.Qt.AlignCenter)
+        self.layout.addWidget(self.earnings_label, rows, 0, 1, cols)  # Span the label across the bottom
+        self.main_layout.addLayout(self.layout)
+
+
+    def confirm_exit(self):
+        reply = QtWidgets.QMessageBox.question(self, 'Message',
+                                               "დარწმუნებული ხარ?",
+                                               QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
+                                               QtWidgets.QMessageBox.No)
+
+        if reply == QtWidgets.QMessageBox.Yes:
+            QtWidgets.QApplication.instance().quit()
+
+    def get_today_earnings(self):
+
+        today = datetime.now().date()
+        conn = sqlite3.connect('parking_history.db')
+        cursor = conn.cursor()
+        cursor.execute("SELECT SUM(total_fee) FROM parking_history WHERE DATE(exit_time) = ?", (today,))
+        today_earnings = cursor.fetchone()[0]
+        conn.close()
+        return today_earnings if today_earnings else 0
+
+
 def main():
-    init_db()
     app = QtWidgets.QApplication(sys.argv)
-    root = QtWidgets.QWidget()
-    root.setWindowTitle("Parking System")
-    root.setStyleSheet("""
-        QWidget {
-            background-color: #333; /* Dark asphalt-like background for the main window to simulate road surface */
-            color: #FFF; /* White text for better readability */
-        }
-        QPushButton {
-            font-size: 12px;
-            border: 2px solid #FFF; /* White border to simulate parking space lines */
-            border-radius: 5px; /* Slightly rounded corners for a more realistic parking space look */
-            padding: 5px;
-            background-color: #555; /* Darker shade for the parking spot to resemble actual parking space */
-            color: #FFF; /* White text color for visibility */
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.5); /* Subtle shadow for a 3D effect */
-            margin: 8px; /* Ensure spacing between parking spots */
-            min-width: 80px; /* Minimum width for each parking space */
-            min-height: 40px; /* Minimum height for each parking space */
-        }
-        QPushButton:hover {
-            background-color: #666; /* Slightly lighter shade on hover to indicate selection */
-        }
-        QPushButton:pressed {
-            background-color: #777; /* Even lighter shade when pressed to simulate button press */
-        }
-        QLabel {
-            font-size: 18px;
-            font-weight: bold;
-            color: #17a2b8; /* Color for the earnings label */
-            padding: 5px;
-            margin-top: 20px;
-            margin-bottom: 20px; /* Space above and below the label */
-        }
-    """)
-
-    layout = QtWidgets.QGridLayout(root)
-    spots = [ParkingSpot(i + 1) for i in range(65)]  # Adjust the number of spots as needed
-    row, col = 0, 0
-    for spot in spots:
-        layout.addWidget(spot, row, col)
-        col += 1
-        if col == 10:  # Adjust based on layout preference
-            col = 0
-            row += 1
-
-    earnings_label = QLabel(f"Today's earnings: {ParkingSpot.get_today_earnings()} Lari")
-    earnings_label.setAlignment(QtCore.Qt.AlignCenter)
-    layout.addWidget(earnings_label, row + 1, 0, 1, 10)  # Span the label across the entire grid width
-
-    root.setLayout(layout)
-    root.resize(800, 600)  # Adjust the size of the main window as needed
-    root.show()
-
+    window = MainApplication()
+    window.showFullScreen()
     sys.exit(app.exec_())
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()
