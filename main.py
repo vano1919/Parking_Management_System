@@ -3,7 +3,8 @@ import re
 
 from PySide6 import QtWidgets, QtGui, QtCore
 from PySide6.QtCore import Qt
-from PySide6.QtWidgets import QDialog, QMessageBox, QCompleter, QLabel, QVBoxLayout, QPushButton, QWidget
+from PySide6.QtWidgets import QDialog, QMessageBox, QCompleter, QLabel, QVBoxLayout, QPushButton, QWidget, \
+    QDialogButtonBox, QGridLayout, QFormLayout, QLineEdit
 import sqlite3
 from datetime import datetime
 
@@ -107,81 +108,87 @@ car_dict = {
 class CarEntryDialog(QDialog):
     def __init__(self, parent=None):
         super().__init__(parent)
+        self.setWindowFlags(Qt.FramelessWindowHint)
         self.setWindowTitle("ავტომობილის სადგომზე დამატება")
         self.setStyleSheet("""
             QDialog {
-                background-color: #f0f0f0;
+                background-color: #1e1e1e;  /* Dark background */
                 font-family: 'Arial';
                 font-size: 14px;
+                color: white;  /* White text color */
             }
             QLineEdit {
-                border: 2px solid #cccccc;
+                border: 2px solid #555;  /* Darker border for line edits */
                 border-radius: 10px;
                 padding: 12px;
                 margin-bottom: 10px;
                 font-size: 16px;
+                background-color: #333;  /* Darker background for line edits */
+                color: white;  /* White text color */
             }
             QLabel {
                 font-size: 16px;
                 margin-bottom: 5px;
+                color: white;  /* White text color */
             }
             QDialogButtonBox {
                 margin-top: 15px;
             }
             QPushButton {
-                border: 1px solid #8f8f91;
+                border: 1px solid #555;  /* Darker border for buttons */
                 border-radius: 6px;
-                background-color: #e7e7e7;
+                background-color: #333;  /* Darker background for buttons */
                 min-width: 100px;
                 font-size: 14px;
                 padding: 5px;
+                color: white;  /* White text color */
             }
             QPushButton:hover {
-                background-color: #d7d7d7;
+                background-color: #555;  /* Slightly lighter background for buttons on hover */
             }
             QPushButton:pressed {
-                background-color: #c7c7c7;
+                background-color: #777;  /* Even lighter background for buttons when pressed */
             }
         """)
 
-        layout = QtWidgets.QFormLayout(self)
-        layout.setSpacing(20)
+        # Main layout
+        main_layout = QVBoxLayout(self)
 
-        self.car_make_entry = QtWidgets.QLineEdit()
-        self.car_make_entry.setPlaceholderText("შეიყვანე მარკა")
-        self.car_model_entry = QtWidgets.QLineEdit()
-        self.car_model_entry.setPlaceholderText("შეიყვანე მოდელი")
-        self.vin_code_entry = QtWidgets.QLineEdit()
-        self.vin_code_entry.setPlaceholderText("შეიყვანე VIN კოდი")
-        # Adjust mask as needed for VIN format
+        # Car details layout
+        car_details_layout = QFormLayout()
+        self.car_make_entry = QLineEdit()
+        self.car_model_entry = QLineEdit()
+        self.vin_code_entry = QLineEdit()
+        car_details_layout.addRow("მარკა:", self.car_make_entry)
+        car_details_layout.addRow("მოდელი:", self.car_model_entry)
+        car_details_layout.addRow("VIN კოდი:", self.vin_code_entry)
+        main_layout.addLayout(car_details_layout)
 
-        # Completer for car make entry
-        self.make_completer = QCompleter(list(car_dict.keys()))
-        self.make_completer.setCompletionMode(QCompleter.PopupCompletion)
-        self.make_completer.setCaseSensitivity(QtCore.Qt.CaseInsensitive)
-        self.car_make_entry.setCompleter(self.make_completer)
+        # Owner details layout
+        owner_details_layout = QGridLayout()
+        self.owner_name_entry = QLineEdit()
+        self.owner_surname_entry = QLineEdit()
+        self.owner_id_entry = QLineEdit()
+        self.owner_phone_entry = QLineEdit()  # Phone number field
 
-        # Completer for car model entry
-        self.model_completer = QCompleter()
-        self.model_completer.setCompletionMode(QCompleter.PopupCompletion)
-        self.model_completer.setCaseSensitivity(QtCore.Qt.CaseInsensitive)
-        self.car_model_entry.setCompleter(self.model_completer)
+        owner_details_layout.addWidget(QLabel("მფლობელის სახელი:"), 0, 0)
+        owner_details_layout.addWidget(self.owner_name_entry, 0, 1)
+        owner_details_layout.addWidget(QLabel("მფლობელის გვარი:"), 0, 2)
+        owner_details_layout.addWidget(self.owner_surname_entry, 0, 3)
+        owner_details_layout.addWidget(QLabel("მფლობელის ID ნომერი:"), 1, 0)
+        owner_details_layout.addWidget(self.owner_id_entry, 1, 1)
+        owner_details_layout.addWidget(QLabel("მობილურის ნომერი:"), 1, 2)  # Corrected line for adding label
+        owner_details_layout.addWidget(self.owner_phone_entry, 1, 3)  # Corrected line for adding phone number field
 
-        # Set up signals for updating and moving focus
-        self.car_make_entry.textChanged.connect(self.update_model_completer)
-        self.make_completer.activated.connect(lambda: self.car_model_entry.setFocus())
-        self.model_completer.activated.connect(lambda: self.vin_code_entry.setFocus())
+        main_layout.addLayout(owner_details_layout)
 
-        layout.addRow("მარკა:", self.car_make_entry)
-        layout.addRow("მოდელი:", self.car_model_entry)
-        layout.addRow("VIN კოდი:", self.vin_code_entry)
-
-        buttons = QtWidgets.QDialogButtonBox(QtWidgets.QDialogButtonBox.Ok | QtWidgets.QDialogButtonBox.Cancel)
+        # Dialog buttons
+        buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         buttons.accepted.connect(self.validate_and_accept)
         buttons.rejected.connect(self.reject)
-        layout.addRow(buttons)
+        main_layout.addWidget(buttons)
 
-        self.setFixedSize(400, 300)  # Set fixed size for the dialog
+        self.setFixedSize(800, 400)  # Adjusted size for new fields
 
     def update_model_completer(self, text):
         make = text.strip().title()
@@ -224,7 +231,7 @@ class CarEntryDialog(QDialog):
                         self.show_warning("ავტომობილი ამ VIN კოდით უკვე დამატებულია.")
 
     def show_warning(self, message):
-        QMessageBox.warning(self, "გაბრთხილება", message)
+        QMessageBox.warning(self, "გაფრთხილება", message)
 
     def show_confirm(self, message):
         return QMessageBox.question(self, "დაადასტურე", message, QMessageBox.Yes | QMessageBox.No)
@@ -238,10 +245,14 @@ class CarEntryDialog(QDialog):
         return count > 0
 
     def get_result(self):
-        car_make = self.car_make_entry.text().strip().title()
-        car_model = self.car_model_entry.text().strip()
-        vin_code = self.vin_code_entry.text().strip().upper()
-        return car_make, car_model, vin_code
+        # Ensure all seven fields are being returned:
+        return (self.car_make_entry.text().strip().title(),
+                self.car_model_entry.text().strip(),
+                self.vin_code_entry.text().strip().upper(),
+                self.owner_name_entry.text().strip(),  # Ensure this is correctly capturing input
+                self.owner_surname_entry.text().strip(),  # Ensure this is correctly capturing input
+                self.owner_id_entry.text().strip(),  # Ensure this is correctly capturing input
+                self.owner_phone_entry.text().strip())  # Ensure this is correctly capturing input
 
 
 class ParkingSpot(QtWidgets.QPushButton):
@@ -252,6 +263,10 @@ class ParkingSpot(QtWidgets.QPushButton):
 
     def __init__(self, id, parent=None):
         super().__init__(parent)
+        self.owner_name = None
+        self.owner_surname = None
+        self.owner_id = None
+        self.owner_phone = None
         self.id = id
         self.db_conn = sqlite3.connect('parking_system.db')
         self.db_conn_history = sqlite3.connect('parking_history.db')
@@ -276,21 +291,26 @@ class ParkingSpot(QtWidgets.QPushButton):
     def add_car(self):
         dialog = CarEntryDialog()
         if dialog.exec():
-            car_make, car_model, vin_code = dialog.get_result()
-            if car_make and car_model and vin_code:
-                self.is_occupied = True
-                self.car_make = car_make
-                self.car_model = car_model
-                self.vin_code = vin_code
-                self.setStyleSheet("background-color: red; color: white; font-weight: bold; font-size: 14px;")
-                self.setText(f'{self.car_make} {self.car_model}\n{self.vin_code}')
-                entry_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+            car_make, car_model, vin_code, owner_name, owner_surname, owner_id, owner_phone = dialog.get_result()
+            # Now you have the owner's details, store them just like car_make, car_model, and vin_code
+            self.owner_name = owner_name
+            self.owner_surname = owner_surname
+            self.owner_id = owner_id
+            self.owner_phone = owner_phone
+            entry_time = datetime.now()
+            # Update database insertion code to include these new fields
+            try:
                 self.db_conn.execute(
-                    'INSERT INTO parking (car_make, car_model, vin_code, entry_time, spot_id) VALUES (?, ?, ?, ?, ?)',
-                    (car_make, car_model, vin_code, entry_time, self.id))
-                self.db_conn.commit()
-                self.refresh_earnings()
-                self.refresh_spot_status()
+                    'INSERT INTO parking (car_make, car_model, vin_code, owner_name, owner_surname, owner_id, owner_phone, entry_time, spot_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                    (car_make, car_model, vin_code, owner_name, owner_surname, owner_id, owner_phone, entry_time,
+                     self.id)
+                )
+                self.db_conn.commit()  # Make sure to commit the transaction
+            except sqlite3.Error as e:
+                print("An error occurred:", e)
+
+            self.refresh_earnings()
+            self.refresh_spot_status()
 
 
 
@@ -302,13 +322,16 @@ class ParkingSpot(QtWidgets.QPushButton):
             (self.id,)).fetchone()
 
         # Check if car information is not found or already checked out
-        if entry_info is None or entry_info[0] is None:
+        if entry_info is None:
             self.show_warning("მანქანა უკვე გამოსულია.")
             return
 
-        # Extract car details and calculate parking duration
+        # Extract car details
         entry_time_str, car_make, car_model, vin_code = entry_info
+        # If your database actually returns the time with fractions of a second:
+        entry_time_str, _ = entry_time_str.split('.')  # This assumes entry_time includes fractional seconds
         entry_time = datetime.strptime(entry_time_str, "%Y-%m-%d %H:%M:%S")
+
         exit_time = datetime.now()
         parking_duration = exit_time - entry_time
         total_days = parking_duration.days
@@ -441,7 +464,10 @@ class ParkingSpot(QtWidgets.QPushButton):
         self.is_occupied = False
         self.setStyleSheet("background-color: green; color: white; font-weight: bold; font-size: 14px;")
         self.setText(f'ადგილი {self.id}')
+        # Split the entry_time_str by the period and take the first part
+        entry_time_str, _ = entry_time_str.split('.')
         entry_time = datetime.strptime(entry_time_str, "%Y-%m-%d %H:%M:%S")
+
         exit_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         parking_duration = datetime.strptime(exit_time, "%Y-%m-%d %H:%M:%S") - entry_time
         total_days = parking_duration.days
@@ -451,9 +477,9 @@ class ParkingSpot(QtWidgets.QPushButton):
                              (exit_time, self.total_fee, self.id))
         self.db_conn_history.execute(
             'INSERT INTO parking_history (car_make, car_model, vin_code, entry_time, exit_time, total_fee) VALUES (?, ?, ?, ?, ?, ?)',
+
             (car_make, car_model, vin_code, entry_time, exit_time, self.total_fee))
         self.db_conn.commit()
-        self.db_conn_history.commit()
 
         # Remove the car entry from the current parking
         self.db_conn.execute('DELETE FROM parking WHERE vin_code = ?', (vin_code,))
@@ -509,39 +535,7 @@ class ParkingSpot(QtWidgets.QPushButton):
         return today_earnings if today_earnings else 0
 
 
-def init_db():
-    conn = sqlite3.connect('parking_system.db')
-    cursor = conn.cursor()
-    cursor.execute('''
-        CREATE TABLE IF NOT EXISTS parking (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            car_make TEXT,
-            car_model TEXT,
-            vin_code TEXT,
-            entry_time TEXT,
-            exit_time TEXT,
-            total_fee REAL,
-            spot_id INTEGER
-        )
-    ''')
-    conn.commit()
-    conn.close()
 
-    conn_history = sqlite3.connect('parking_history.db')
-    cursor_history = conn_history.cursor()
-    cursor_history.execute('''
-        CREATE TABLE IF NOT EXISTS parking_history (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            car_make TEXT,
-            car_model TEXT,
-            vin_code TEXT,
-            entry_time TEXT,
-            exit_time TEXT,
-            total_fee REAL
-        )
-    ''')
-    conn_history.commit()
-    conn_history.close()
 
 
 
@@ -563,9 +557,56 @@ class CustomButton(QtWidgets.QPushButton):
 
 
 class MainApplication(QtWidgets.QWidget):
+
+    def init_db():
+        conn = sqlite3.connect('parking_system.db')
+        cursor = conn.cursor()
+        # Corrected SQL commands
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS parking (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                car_make TEXT,
+                car_model TEXT,
+                vin_code TEXT,
+                owner_name TEXT,
+                owner_surname TEXT,
+                owner_id TEXT,
+                entry_time TEXT,
+                exit_time TEXT,
+                total_fee REAL,
+                owner_phone TEXT, -- Correctly added comma here
+                spot_id INTEGER
+            );
+        ''')  # Ensure no '#' is used in SQL part
+        conn.commit()
+        conn.close()
+
+        conn_history = sqlite3.connect('parking_history.db')
+        cursor_history = conn_history.cursor()
+        # Corrected SQL commands
+        cursor_history.execute('''
+            CREATE TABLE IF NOT EXISTS parking_history (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                car_make TEXT,
+                car_model TEXT,
+                vin_code TEXT,
+                owner_name TEXT,
+                owner_surname TEXT,
+                owner_id TEXT,
+                entry_time TEXT,
+                exit_time TEXT,
+                total_fee REAL,
+                owner_phone TEXT -- Correctly added comma here
+            );
+        ''')  # Ensure no '#' is used in SQL part
+        conn_history.commit()
+        conn_history.close()
+
     def __init__(self):
         super().__init__()
+        MainApplication.init_db()  # Call the static method
         self.init_ui()
+
 
     def init_ui(self):
         self.setWindowTitle("Parking System")
@@ -626,7 +667,7 @@ class MainApplication(QtWidgets.QWidget):
 
 
     def confirm_exit(self):
-        reply = QtWidgets.QMessageBox.question(self, 'Message',
+        reply = QtWidgets.QMessageBox.question(self, 'დაზუსტება',
                                                "დარწმუნებული ხარ?",
                                                QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
                                                QtWidgets.QMessageBox.No)
