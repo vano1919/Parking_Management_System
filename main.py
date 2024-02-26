@@ -318,7 +318,7 @@ class ParkingSpot(QtWidgets.QPushButton):
 
         # Fetch car entry information from the database
         entry_info = self.db_conn.execute(
-            'SELECT entry_time, car_make, car_model, vin_code FROM parking WHERE spot_id = ? AND exit_time IS NULL',
+            'SELECT car_make, car_model, vin_code, owner_name, owner_surname, owner_id, owner_phone, entry_time, spot_id FROM parking WHERE spot_id = ? AND exit_time IS NULL',
             (self.id,)).fetchone()
 
         # Check if car information is not found or already checked out
@@ -327,20 +327,26 @@ class ParkingSpot(QtWidgets.QPushButton):
             return
 
         # Extract car details
-        entry_time_str, car_make, car_model, vin_code = entry_info
-        # If your database actually returns the time with fractions of a second:
-        entry_time_str, _ = entry_time_str.split('.')  # This assumes entry_time includes fractional seconds
-        entry_time = datetime.strptime(entry_time_str, "%Y-%m-%d %H:%M:%S")
+        # Assuming 'entry_info' contains all necessary car and parking information.
+        # Extract car details
+        car_make, car_model, vin_code, owner_name, owner_surname, owner_id, owner_phone, entry_time_str, spot_id = entry_info
 
-        exit_time = datetime.now()
-        parking_duration = exit_time - entry_time
-        total_days = parking_duration.days
-        self.total_fee = max(total_days * 5, 5)  # Calculate total fee
+        # Convert entry and exit timestamps to dates
+        entry_date = datetime.strptime(entry_time_str, "%Y-%m-%d %H:%M:%S.%f").date()
+        exit_date = datetime.now().date()  # This removes the time part, keeping only the date
+
+        # Calculate the total number of days
+        total_days = (exit_date - entry_date).days + 1  # Add 1 to ensure the entry day counts as a full day
+
+        # Assuming your parking fee is $5 per day
+        self.total_fee = total_days * 5
 
         # Prepare payment information
-        payment_info = f"<html><head/><body><p><span style='font-weight:600;'>ავტომობილის მოდელი:</span> {car_make}</p>" \
-                       f"<p><span style='font-weight:600;'>ავტომობილის მარკა:</span> {car_model}</p>" \
+        # Prepare payment information
+        payment_info = f"<html><head/><body><p><span style='font-weight:600;'>ავტომობილი:</span> {car_make} {car_model}</p>" \
                        f"<p><span style='font-weight:600;'>VIN კოდი:</span> {vin_code}</p>" \
+                       f"<p><span style='font-weight:600;'>მფლობელი:</span> {owner_name} {owner_surname} ({owner_id})</p>" \
+                       f"<p><span style='font-weight:600;'>ტელ:</span> {owner_phone}</p>" \
                        f"<p><span style='font-weight:600;'>ავტომობილი სადგომზე იმყოფებოდა:</span> {total_days} დღე</p>" \
                        f"<p style='margin-top:20px;'><span style='font-size:18px; font-weight:700;'>სულ გადასახდელია:</span> <span style='font-size:24px; color:#4A90E2;'>{self.total_fee} ლარი</span></p></body></html>"
 
@@ -350,29 +356,46 @@ class ParkingSpot(QtWidgets.QPushButton):
         dialog.setFixedSize(500, 500)
         dialog.setStyleSheet("""
             QDialog {
-                background-color: #FFFFFF; /* White background for a modern look */
-                color: #000000; /* Black text for readability */
-            }
-            QLabel {
-                font-size: 16px; /* Text size */
-                background-color: #F0F0F0; /* Light grey background for the label */
-                padding: 20px;
-                border-radius: 10px;
-                border: 2px solid #E0E0E0; /* Light grey border */
-            }
-            QPushButton {
-                background-color: #4A90E2; /* Blue color for buttons */
-                color: white;
-                font-weight: medium;
-                font-size: 16px;
-                padding: 15px 30px;
-                border: none;
-                border-radius: 5px;
-                margin-top: 25px;
-            }
-            QPushButton:hover {
-                background-color: #357ABD; /* Darker shade on hover */
-            }
+    background-color: #1e1e1e;  /* Dark background */
+    font-family: 'Arial';
+    font-size: 14px;
+    color: white;  /* White text color */
+}
+
+QLabel {
+    font-size: 16px;
+    margin-bottom: 5px;
+    color: white;  /* White text color */
+}
+
+QLineEdit {
+    border: 2px solid #555;  /* Darker border for line edits */
+    border-radius: 10px;
+    padding: 12px;
+    margin-bottom: 10px;
+    font-size: 16px;
+    background-color: #333;  /* Darker background for line edits */
+    color: white;  /* White text color */
+}
+
+QPushButton {
+    border: 1px solid #555;  /* Darker border for buttons */
+    border-radius: 6px;
+    background-color: #333;  /* Darker background for buttons */
+    min-width: 100px;
+    font-size: 14px;
+    padding: 5px;
+    color: white;  /* White text color */
+}
+
+QPushButton:hover {
+    background-color: #555;  /* Slightly lighter background for buttons on hover */
+}
+
+QPushButton:pressed {
+    background-color: #777;  /* Even lighter background for buttons when pressed */
+}
+
         """)
 
         # Create layout and widgets
@@ -384,17 +407,17 @@ class ParkingSpot(QtWidgets.QPushButton):
 
         # Set the style for the information container
         info_widget.setStyleSheet("""
-            background-color: #F0F0F0; /* Light grey background */
+            background-color: #1e1e1e;  /* Dark background */
             border-radius: 15px; /* Rounded corners */
-            border: 2px solid #E0E0E0; /* Light grey border */
             padding: 20px;
+            color: white; /* White text */
         """)
 
         info_label = QLabel(payment_info)
         info_label.setAlignment(Qt.AlignCenter)  # Center align the text within the label
         info_label.setStyleSheet("""
             font-size: 16px; /* Adjusted text size for clarity */
-            color: #000000; /* Black text for readability against the light background */
+            color: white; /* Black text for readability against the light background */
         """)
         info_widget_layout.addWidget(info_label)
         layout.addWidget(info_widget)
@@ -429,7 +452,7 @@ class ParkingSpot(QtWidgets.QPushButton):
 
         # Set dialog layout
         dialog.setLayout(layout)
-        dialog.exec_()
+        dialog.exec()
 
     def user_confirmed_exit(self, dialog, confirmed):
         dialog.close()
@@ -452,7 +475,7 @@ class ParkingSpot(QtWidgets.QPushButton):
         ok_button.clicked.connect(warning_dialog.close)
         layout.addWidget(ok_button)
         warning_dialog.setLayout(layout)
-        warning_dialog.exec_()
+        warning_dialog.exec()
     def exit_car(self):
         entry_info = self.db_conn.execute(
             'SELECT entry_time, car_make, car_model, vin_code FROM parking WHERE spot_id = ? AND exit_time IS NULL',
@@ -556,12 +579,33 @@ class CustomButton(QtWidgets.QPushButton):
             """)
 
 
+
 class MainApplication(QtWidgets.QWidget):
 
+    @staticmethod
+    def read_credentials():
+        global global_password
+        # Set default values using the global variable
+        credentials = {'number_of_spaces': 64, 'password': 1237}
+        try:
+            with open('credentials.txt', 'r') as file:
+                for line in file:
+                    key, value = line.strip().split(': ')
+                    credentials[key] = value.strip()
+        except FileNotFoundError:
+            print("credentials.txt file not found, using default values.")
+        except ValueError:
+            print("Error processing credentials.txt, ensure it is formatted correctly.")
+
+        # Update global password based on file or keep default
+        global_password = credentials['password']
+
+        return credentials
+
+    @staticmethod
     def init_db():
         conn = sqlite3.connect('parking_system.db')
         cursor = conn.cursor()
-        # Corrected SQL commands
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS parking (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -571,19 +615,18 @@ class MainApplication(QtWidgets.QWidget):
                 owner_name TEXT,
                 owner_surname TEXT,
                 owner_id TEXT,
+                owner_phone TEXT,
                 entry_time TEXT,
                 exit_time TEXT,
                 total_fee REAL,
-                owner_phone TEXT, -- Correctly added comma here
                 spot_id INTEGER
             );
-        ''')  # Ensure no '#' is used in SQL part
+        ''')
         conn.commit()
         conn.close()
 
         conn_history = sqlite3.connect('parking_history.db')
         cursor_history = conn_history.cursor()
-        # Corrected SQL commands
         cursor_history.execute('''
             CREATE TABLE IF NOT EXISTS parking_history (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
@@ -593,19 +636,21 @@ class MainApplication(QtWidgets.QWidget):
                 owner_name TEXT,
                 owner_surname TEXT,
                 owner_id TEXT,
+                owner_phone TEXT,
                 entry_time TEXT,
                 exit_time TEXT,
-                total_fee REAL,
-                owner_phone TEXT -- Correctly added comma here
+                total_fee REAL
             );
-        ''')  # Ensure no '#' is used in SQL part
+        ''')
         conn_history.commit()
         conn_history.close()
 
     def __init__(self):
         super().__init__()
-        MainApplication.init_db()  # Call the static method
-        self.init_ui()
+        credentials = MainApplication.read_credentials()  # Read credentials from file # Use the password from credentials
+
+        MainApplication.init_db()  # Initialize the database
+        self.init_ui()  # Initialize the UI
 
 
     def init_ui(self):
@@ -648,7 +693,7 @@ class MainApplication(QtWidgets.QWidget):
         # Adjust these numbers based on your screen size and desired layout
         rows = 9  # Number of rows in the grid
         cols = 8  # Number of columns in the grid
-        num_buttons = 64  # Total number of parking buttons
+        num_buttons = int(self.read_credentials()['number_of_spaces']) # Total number of parking buttons
 
         self.layout = QtWidgets.QGridLayout()
         button_id = 1
@@ -690,7 +735,7 @@ def main():
     app = QtWidgets.QApplication(sys.argv)
     window = MainApplication()
     window.showFullScreen()
-    sys.exit(app.exec_())
+    sys.exit(app.exec())
 
 
 if __name__ == '__main__':
