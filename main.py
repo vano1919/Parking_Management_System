@@ -7,7 +7,7 @@ from PySide6.QtGui import QStandardItemModel
 from PySide6.QtWidgets import QCompleter, QDialog, QFormLayout, QLineEdit, QVBoxLayout, QLabel, QDialogButtonBox, QMessageBox, QApplication
 from PySide6.QtCore import Qt, QStringListModel  # Add any other needed modules but you might not need QStringListModel for PySide6
 from PySide6.QtGui import QStandardItem, QStandardItemModel  # Ensure this is correctly placed
-
+import subprocess
 from PySide6 import QtWidgets, QtGui, QtCore
 from PySide6.QtCore import Qt
 from PySide6.QtWidgets import QDialog, QMessageBox, QCompleter, QLabel, QVBoxLayout, QPushButton, QWidget, \
@@ -579,20 +579,63 @@ QPushButton:pressed {
             credentials = {}
             for line in file:
                 key, value = line.strip().split(': ')
-                credentials[key] = value
+                credentials[key] = value.strip()  # Ensure to strip value
 
         # Check if the entered password is correct
         if entered_password == credentials.get('password', ''):
             self.exit_car()  # Proceed with exiting the car
             dialog.accept()
-            self.db_conn.execute(
-                'DELETE FROM parking WHERE spot_id = ?',
-                (self.id,))
-            self.db_conn.commit()
+            # Assuming self.id contains the spot_id
+            self.print_car_details(spot_id=self.id)  # Call the print function with the parking spot ID
         else:
-            QMessageBox.warning(self, "პაროლი არასწორია", "შეყვანილი პაროლი არასწორია. სცადეთ თავიდან.")
+            QMessageBox.warning(self, "Incorrect Password", "The entered password is incorrect. Please try again.")
             dialog.reject()
 
+    def print_car_details(self, spot_id):
+        # Connect to the SQLite database
+        conn = sqlite3.connect('parking_system.db')
+        cursor = conn.cursor()
+
+        # Prepare the SQL query string
+        query = "SELECT * FROM parking WHERE spot_id = ?"
+
+        # Execute the query with the specific spot_id
+        cursor.execute(query, (self.id,))
+
+        # Fetch all records for the specified spot_id
+        records = cursor.fetchone()
+
+        # Close the database connection
+        conn.close()
+
+
+
+        # Check if car details were found
+        # Unpack the details
+        id,car_make, car_model, vin_code, owner_name, owner_surname, owner_id, owner_phone, entry_time, exit_time,total_fee,spot_id,individual_fee = records
+        exit_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
+        if individual_fee is not  float:
+            individual_fee = 5
+        # Format the details into a text block
+        text_to_print = (
+            f"ავტომობილი: {car_make} {car_model} VIN: {vin_code}\n"
+            f"მფლობელი: {owner_name} {owner_surname} {owner_id}\n"
+            f"პარკირების დაწყების თარიღი: {entry_time}\n"
+            f"დღის ღირებულება: {str(individual_fee)}\n"
+        )
+
+        # Assuming you're using Windows and Notepad for printing
+        try:
+            with open('temp_car_details.txt', 'w' , "utf-8") as f:
+                f.write(text_to_print)
+            subprocess.run(['notepad', '/p', 'temp_car_details.txt'], check=True)
+
+        except Exception as e:
+            print(f"An error occurred while printing: {e}")
+        self.db_conn.execute(
+            'DELETE FROM parking WHERE spot_id = ?',
+            (self.id,))
+        self.db_conn.commit()
     def show_warning(self, message):
         # Create a separate method for showing warnings if you don't have it already
         warning_dialog = QDialog(self)
@@ -610,37 +653,37 @@ QPushButton:pressed {
         warning_dialog.exec()
 
     def exit_car(self):
+        # Retrieve the car entry information from the database
         entry_info = self.db_conn.execute(
             'SELECT entry_time, car_make, car_model, vin_code, owner_name, owner_surname, owner_id, owner_phone, individual_fee FROM parking WHERE spot_id = ? AND exit_time IS NULL',
             (self.id,)).fetchone()
 
+        # Check if there is no car information found or if it's already checked out
         if entry_info is None:
-            self.show_warning("ავტომობილი უკვე გამოსულია სადგომიდან.")
+            self.show_warning("ავტომობილი უკვე გამოსულია სადგომიდან.")  # Car has already exited
             return
 
+        # Extracting car and parking information
         entry_time_str, car_make, car_model, vin_code, owner_name, owner_surname, owner_id, owner_phone, individual_fee = entry_info
-        entry_time = datetime.strptime(entry_time_str.split('.')[0],
-                                       "%Y-%m-%d %H:%M:%S")  # Remove fractional seconds if present
+        entry_time = datetime.strptime(entry_time_str, "%Y-%m-%d %H:%M:%S.%f")
         exit_time = datetime.now()
-        total_days = (exit_time.date() - entry_time.date()).days + 1  # Add one to include the current day
+        total_days = (exit_time.date() - entry_time.date()).days + 1  # Including the current day
         total_fee = total_days * individual_fee
 
-        # Update the parking system database to mark the car as exited
+        # Updating the database to reflect the car's exit
         self.db_conn.execute(
             'UPDATE parking SET exit_time = ?, total_fee = ? WHERE spot_id = ? AND exit_time IS NULL',
             (exit_time.strftime("%Y-%m-%d %H:%M:%S"), total_fee, self.id))
         self.db_conn.commit()
 
-        # Insert the exit record into the parking history database
+        # Inserting the exit record into the parking history database
         self.db_conn_history.execute(
             'INSERT INTO parking_history (car_make, car_model, vin_code, owner_name, owner_surname, owner_id, owner_phone, entry_time, exit_time, total_fee) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            (car_make, car_model, vin_code, entry_info[3], entry_info[4], entry_info[5], entry_info[6], entry_time_str,
+            (car_make, car_model, vin_code, owner_name, owner_surname, owner_id, owner_phone, entry_time_str,
              exit_time.strftime("%Y-%m-%d %H:%M:%S"), total_fee))
-
-
         self.db_conn_history.commit()
 
-        # Refresh UI components to reflect the change
+        # Refreshing UI components and updating the parking spot status
         self.is_occupied = False
         self.setStyleSheet("background-color: green; color: white; font-weight: bold; font-size: 14px;")
         self.setText(f'ადგილი {self.id}')
