@@ -31,7 +31,7 @@ class EnterMoveQLineEdit(QLineEdit):
 
 
 class CarEntryDialog(QDialog):
-    def __init__(self, parent=None, car_dict=None):  # Pass car_dict as parameter
+    def __init__(self, parent=None):  # Pass car_dict as parameter
         super().__init__(parent)
         self.setWindowFlags(Qt.FramelessWindowHint)
         self.setWindowTitle("ავტომობილის სადგომზე დამატება")
@@ -89,7 +89,7 @@ class CarEntryDialog(QDialog):
         car_details_layout.addRow("VIN კოდი:", self.vin_code_entry)
         main_layout.addLayout(car_details_layout)
 
-        self.car_dict = car_dict = {
+        self.car_dict = {
     "Mitsubishi": ["Outlander", "Eclipse Cross", "Mirage", "Pajero", "L200", "ASX", "Triton", "Space Star", "Montero",
                    "Galant"],
     "Chrysler": ["300", "Pacifica", "Voyager", "Aspen", "Sebring", "Crossfire", "PT Cruiser"],
@@ -207,8 +207,9 @@ class CarEntryDialog(QDialog):
         self.owner_surname_entry = EnterMoveQLineEdit()
         self.owner_id_entry = EnterMoveQLineEdit()
         self.owner_phone_entry = EnterMoveQLineEdit()  # Phone number field
-        self.parking_fee_entry = EnterMoveQLineEdit()
-        self.parking_fee_entry.setText("5")  # Default fee
+        # In CarEntryDialog.__init__:
+        self.individual_fee_entry = EnterMoveQLineEdit()
+        self.individual_fee_entry.setText("5")  # Set a default fee or leave blank for user input
 
         owner_details_layout.addWidget(QLabel("მფლობელის სახელი:"), 0, 0)
         owner_details_layout.addWidget(self.owner_name_entry, 0, 1)
@@ -220,7 +221,7 @@ class CarEntryDialog(QDialog):
         owner_details_layout.addWidget(self.owner_phone_entry, 1, 3)
         # Parking fee entry
 
-        car_details_layout.addRow("დღის ღირებულება:", self.parking_fee_entry)
+        car_details_layout.addRow("პარკინგის ტარიფი:", self.individual_fee_entry)  # Add this to the form layout
         main_layout.addLayout(owner_details_layout)
 
         # Dialog buttons
@@ -252,8 +253,9 @@ class CarEntryDialog(QDialog):
         car_make = self.car_make_entry.text().strip().title()
         car_model = self.car_model_entry.text().strip()
         vin_code = self.vin_code_entry.text().strip().upper()
+
         try:
-            parking_fee = int(self.parking_fee_entry.text())
+            parking_fee = int(self.individual_fee_entry.text())
             if parking_fee <= 0:
                 raise ValueError  # Ensure the fee is positive
         except ValueError:
@@ -263,22 +265,23 @@ class CarEntryDialog(QDialog):
             self.show_warning("გთხოვთ შეავსოთ ყველა ველი.")
             return
 
-        if car_make not in car_dict or car_model.lower() not in map(str.lower, car_dict[car_make]):
-            confirm_dialog = self.show_confirm("ეს მოდელი ვერ ვიპოვე სიაში. მაინც დავამატო?")
-            if confirm_dialog == QMessageBox.Yes:
-                self.accept()
+
+        vin_regex = re.compile(
+            r'^[A-HJ-NPR-Za-hj-npr-z\d]{8}[\dX][A-HJ-NPR-Za-hj-npr-zm\d]{2}\d{6}$')
+        # Basic VIN format validation
+        if not vin_regex.match(vin_code):
+            confirm_vin_dialog = self.show_confirm(f"{vin_code} სწორია?")
+            if confirm_vin_dialog == QMessageBox.Yes:
+                if not self.vin_code_exists_in_current(vin_code):
+                    self.accept()
+
+
+                else:
+                    self.show_warning("ავტომობილი ამ VIN კოდით უკვე დამატებულია.")
         else:
-            vin_regex = re.compile(
-                r'^[A-HJ-NPR-Za-hj-npr-z\d]{8}[\dX][A-HJ-NPR-Za-hj-npr-zm\d]{2}\d{6}$')  # Basic VIN format validation
-            if not vin_regex.match(vin_code):
-                self.show_warning("არასწორი VIN კოდი.")
-            else:
-                confirm_vin_dialog = self.show_confirm(f"{vin_code} სწორია?")
-                if confirm_vin_dialog == QMessageBox.Yes:
-                    if not self.vin_code_exists_in_current(vin_code):
-                        self.accept()
-                    else:
-                        self.show_warning("ავტომობილი ამ VIN კოდით უკვე დამატებულია.")
+            self.accept()
+
+
 
     def show_warning(self, message):
         QMessageBox.warning(self, "გაფრთხილება", message)
@@ -341,24 +344,20 @@ class ParkingSpot(QtWidgets.QPushButton):
     def add_car(self):
         dialog = CarEntryDialog()
         if dialog.exec():
+            # Get the results from the dialog
             car_make, car_model, vin_code, owner_name, owner_surname, owner_id, owner_phone = dialog.get_result()
-            # Now you have the owner's details, store them just like car_make, car_model, and vin_code
-            self.owner_name = owner_name
-            self.owner_surname = owner_surname
-            self.owner_id = owner_id
-            self.owner_phone = owner_phone
-            entry_time = datetime.now()
-            # Update database insertion code to include these new fields
+            individual_fee = float(dialog.individual_fee_entry.text())  # Get individual fee from the dialog
+
+            # Insert into the database with individual_fee
             try:
                 self.db_conn.execute(
-                    'INSERT INTO parking (car_make, car_model, vin_code, owner_name, owner_surname, owner_id, owner_phone, entry_time, spot_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                    (car_make, car_model, vin_code, owner_name, owner_surname, owner_id, owner_phone, entry_time,
-                     self.id)
+                    'INSERT INTO parking (car_make, car_model, vin_code, owner_name, owner_surname, owner_id, owner_phone, entry_time, spot_id, individual_fee) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                    (car_make, car_model, vin_code, owner_name, owner_surname, owner_id, owner_phone, datetime.now(),
+                     self.id, individual_fee)
                 )
-                self.db_conn.commit()  # Make sure to commit the transaction
+                self.db_conn.commit()
             except sqlite3.Error as e:
                 print("An error occurred:", e)
-
             self.refresh_earnings()
             self.refresh_spot_status()
 
@@ -366,7 +365,7 @@ class ParkingSpot(QtWidgets.QPushButton):
 
         # Fetch car entry information from the database
         entry_info = self.db_conn.execute(
-            'SELECT car_make, car_model, vin_code, owner_name, owner_surname, owner_id, owner_phone, entry_time, spot_id FROM parking WHERE spot_id = ? AND exit_time IS NULL',
+            'SELECT car_make, car_model, vin_code, owner_name, owner_surname, owner_id, owner_phone, entry_time, spot_id, individual_fee FROM parking WHERE spot_id = ? AND exit_time IS NULL',
             (self.id,)).fetchone()
 
         # Check if car information is not found or already checked out
@@ -377,19 +376,18 @@ class ParkingSpot(QtWidgets.QPushButton):
         # Extract car details
         # Assuming 'entry_info' contains all necessary car and parking information.
         # Extract car details
-        car_make, car_model, vin_code, owner_name, owner_surname, owner_id, owner_phone, entry_time_str, spot_id = entry_info
+        car_make, car_model, vin_code, owner_name, owner_surname, owner_id, owner_phone, entry_time_str, spot_id,individual_fee = entry_info
 
         # Convert entry and exit timestamps to dates
         entry_date = datetime.strptime(entry_time_str, "%Y-%m-%d %H:%M:%S.%f").date()
         exit_date = datetime.now().date()  # This removes the time part, keeping only the date
 
-        # Calculate the total number of days
-        total_days = (exit_date - entry_date).days + 1  # Add 1 to ensure the entry day counts as a full day
 
-        # Assuming your parking fee is $5 per day
-        self.total_fee = total_days * 5
+        individual_fee = entry_info[-1]  # Assuming it's the last in the fetched data
+        total_days = (exit_date - entry_date).days + 1
+        self.total_fee = total_days * individual_fee
 
-        # Prepare payment information
+
         # Prepare payment information
         payment_info = f"<html><head/><body><p><span style='font-weight:600;'>ავტომობილი:</span> {car_make} {car_model}</p>" \
                        f"<p><span style='font-weight:600;'>VIN კოდი:</span> {vin_code}</p>" \
@@ -526,36 +524,39 @@ QPushButton:pressed {
 
     def exit_car(self):
         entry_info = self.db_conn.execute(
-            'SELECT entry_time, car_make, car_model, vin_code FROM parking WHERE spot_id = ? AND exit_time IS NULL',
+            'SELECT entry_time, car_make, car_model, vin_code, individual_fee FROM parking WHERE spot_id = ? AND exit_time IS NULL',
             (self.id,)).fetchone()
-        if entry_info is None or entry_info[0] is None:
+        if entry_info is None:
             self.show_warning("ავტომობილი უკვე გამოსულია სადგომიდან.")
             return
-        entry_time_str, car_make, car_model, vin_code = entry_info
+
+        entry_time_str, car_make, car_model, vin_code, individual_fee = entry_info
+        # Remove fractional seconds from the entry_time_str if present
+        entry_time_str = entry_time_str.split('.')[0]
+        entry_time = datetime.strptime(entry_time_str, "%Y-%m-%d %H:%M:%S")
+        exit_time = datetime.now()
+        total_days = (exit_time.date() - entry_time.date()).days + 1  # Add one to include the current day
+
+        # Calculate the total fee based on the number of days and individual fee
+        self.total_fee = total_days * individual_fee
+
+
+        # Update the database to mark the car as exited and record the total fee
+        self.db_conn.execute(
+            'UPDATE parking SET exit_time = ?, total_fee = ? WHERE spot_id = ? AND exit_time IS NULL',
+            (exit_time.strftime("%Y-%m-%d %H:%M:%S"), self.total_fee, self.id))
+        self.db_conn.commit()
+
+        # Record the exit in the parking history database
+        self.db_conn_history.execute(
+            'INSERT INTO parking_history (car_make, car_model, vin_code, entry_time, exit_time, total_fee) VALUES (?, ?, ?, ?, ?, ?)',
+            (car_make, car_model, vin_code, entry_time_str, exit_time.strftime("%Y-%m-%d %H:%M:%S"), self.total_fee))
+        self.db_conn_history.commit()
+
+        # Refresh UI components to reflect the change
         self.is_occupied = False
         self.setStyleSheet("background-color: green; color: white; font-weight: bold; font-size: 14px;")
         self.setText(f'ადგილი {self.id}')
-        # Split the entry_time_str by the period and take the first part
-        entry_time_str, _ = entry_time_str.split('.')
-        entry_time = datetime.strptime(entry_time_str, "%Y-%m-%d %H:%M:%S")
-
-        exit_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        parking_duration = datetime.strptime(exit_time, "%Y-%m-%d %H:%M:%S") - entry_time
-        total_days = parking_duration.days
-        self.total_fee = max(total_days * parking_fee, 5)
-
-        self.db_conn.execute('UPDATE parking SET exit_time = ?, total_fee = ? WHERE spot_id = ? AND exit_time IS NULL',
-                             (exit_time, self.total_fee, self.id))
-        self.db_conn_history.execute(
-            'INSERT INTO parking_history (car_make, car_model, vin_code, entry_time, exit_time, total_fee) VALUES (?, ?, ?, ?, ?, ?)',
-
-            (car_make, car_model, vin_code, entry_time, exit_time, self.total_fee))
-        self.db_conn.commit()
-
-        # Remove the car entry from the current parking
-        self.db_conn.execute('DELETE FROM parking WHERE vin_code = ?', (vin_code,))
-        self.db_conn.commit()
-
         self.refresh_earnings()
         self.refresh_spot_status()
 
@@ -661,7 +662,8 @@ class MainApplication(QtWidgets.QWidget):
                 entry_time TEXT,
                 exit_time TEXT,
                 total_fee REAL,
-                spot_id INTEGER
+                spot_id INTEGER,
+                individual_fee REAL  -- New column for individual parking fee
             );
         ''')
         conn.commit()
@@ -681,7 +683,8 @@ class MainApplication(QtWidgets.QWidget):
                 owner_phone TEXT,
                 entry_time TEXT,
                 exit_time TEXT,
-                total_fee REAL
+                total_fee REAL,
+                individual_fee REAL  -- New column for individual parking fee
             );
         ''')
         conn_history.commit()
@@ -750,6 +753,7 @@ class MainApplication(QtWidgets.QWidget):
         self.earnings_label.setAlignment(QtCore.Qt.AlignCenter)
         self.layout.addWidget(self.earnings_label, rows, 0, 1, cols)  # Span the label across the bottom
         self.main_layout.addLayout(self.layout)
+
 
     def confirm_exit(self):
         reply = QtWidgets.QMessageBox.question(self, 'დაზუსტება',
