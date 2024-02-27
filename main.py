@@ -1,5 +1,12 @@
 import sys
 import re
+from PyQt5.QtCore import QStringListModel
+from PySide6.QtWidgets import QCompleter
+from PySide6.QtGui import QStandardItem
+from PySide6.QtGui import QStandardItemModel
+from PySide6.QtWidgets import QCompleter, QDialog, QFormLayout, QLineEdit, QVBoxLayout, QLabel, QDialogButtonBox, QMessageBox, QApplication
+from PySide6.QtCore import Qt, QStringListModel  # Add any other needed modules but you might not need QStringListModel for PySide6
+from PySide6.QtGui import QStandardItem, QStandardItemModel  # Ensure this is correctly placed
 
 from PySide6 import QtWidgets, QtGui, QtCore
 from PySide6.QtCore import Qt
@@ -8,7 +15,81 @@ from PySide6.QtWidgets import QDialog, QMessageBox, QCompleter, QLabel, QVBoxLay
 import sqlite3
 from datetime import datetime
 
-car_dict = {
+
+
+class EnterMoveQLineEdit(QLineEdit):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+
+    def keyPressEvent(self, event):
+        if event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:
+            self.focusNextChild()  # Moves focus to next widget in the tab order
+        else:
+            super().keyPressEvent(event)  # Handle other key events normally
+
+
+
+
+class CarEntryDialog(QDialog):
+    def __init__(self, parent=None, car_dict=None):  # Pass car_dict as parameter
+        super().__init__(parent)
+        self.setWindowFlags(Qt.FramelessWindowHint)
+        self.setWindowTitle("ავტომობილის სადგომზე დამატება")
+        self.setStyleSheet("""
+            QDialog {
+                background-color: #1e1e1e;  /* Dark background */
+                font-family: 'Arial';
+                font-size: 14px;
+                color: white;  /* White text color */
+            }
+            QLineEdit {
+                border: 2px solid #555;  /* Darker border for line edits */
+                border-radius: 10px;
+                padding: 12px;
+                margin-bottom: 10px;
+                font-size: 16px;
+                background-color: #333;  /* Darker background for line edits */
+                color: white;  /* White text color */
+            }
+            QLabel {
+                font-size: 16px;
+                margin-bottom: 5px;
+                color: white;  /* White text color */
+            }
+            QDialogButtonBox {
+                margin-top: 15px;
+            }
+            QPushButton {
+                border: 1px solid #555;  /* Darker border for buttons */
+                border-radius: 6px;
+                background-color: #333;  /* Darker background for buttons */
+                min-width: 100px;
+                font-size: 14px;
+                padding: 5px;
+                color: white;  /* White text color */
+            }
+            QPushButton:hover {
+                background-color: #555;  /* Slightly lighter background for buttons on hover */
+            }
+            QPushButton:pressed {
+                background-color: #777;  /* Even lighter background for buttons when pressed */
+            }
+        """)
+
+        # Main layout
+        main_layout = QVBoxLayout(self)
+
+        # Car details layout
+        car_details_layout = QFormLayout()
+        self.car_make_entry = EnterMoveQLineEdit()
+        self.car_model_entry = EnterMoveQLineEdit()
+        self.vin_code_entry = EnterMoveQLineEdit()
+        car_details_layout.addRow("მარკა:", self.car_make_entry)
+        car_details_layout.addRow("მოდელი:", self.car_model_entry)
+        car_details_layout.addRow("VIN კოდი:", self.vin_code_entry)
+        main_layout.addLayout(car_details_layout)
+
+        self.car_dict = car_dict = {
     "Mitsubishi": ["Outlander", "Eclipse Cross", "Mirage", "Pajero", "L200", "ASX", "Triton", "Space Star", "Montero",
                    "Galant"],
     "Chrysler": ["300", "Pacifica", "Voyager", "Aspen", "Sebring", "Crossfire", "PT Cruiser"],
@@ -104,72 +185,30 @@ car_dict = {
     "Landwind": ["X7", "X5", "X8", "X2", "X9", "X4", "X6", "X3", "X1", "X2", "E33", "E36"]
 }
 
+        # Completer for car makes
+        self.make_completer = QCompleter(list(self.car_dict.keys()))
+        self.make_completer.setCaseSensitivity(Qt.CaseInsensitive)
+        self.make_completer.setCompletionMode(QCompleter.PopupCompletion)
+        self.car_make_entry.setCompleter(self.make_completer)
 
-class CarEntryDialog(QDialog):
-    def __init__(self, parent=None):
-        super().__init__(parent)
-        self.setWindowFlags(Qt.FramelessWindowHint)
-        self.setWindowTitle("ავტომობილის სადგომზე დამატება")
-        self.setStyleSheet("""
-            QDialog {
-                background-color: #1e1e1e;  /* Dark background */
-                font-family: 'Arial';
-                font-size: 14px;
-                color: white;  /* White text color */
-            }
-            QLineEdit {
-                border: 2px solid #555;  /* Darker border for line edits */
-                border-radius: 10px;
-                padding: 12px;
-                margin-bottom: 10px;
-                font-size: 16px;
-                background-color: #333;  /* Darker background for line edits */
-                color: white;  /* White text color */
-            }
-            QLabel {
-                font-size: 16px;
-                margin-bottom: 5px;
-                color: white;  /* White text color */
-            }
-            QDialogButtonBox {
-                margin-top: 15px;
-            }
-            QPushButton {
-                border: 1px solid #555;  /* Darker border for buttons */
-                border-radius: 6px;
-                background-color: #333;  /* Darker background for buttons */
-                min-width: 100px;
-                font-size: 14px;
-                padding: 5px;
-                color: white;  /* White text color */
-            }
-            QPushButton:hover {
-                background-color: #555;  /* Slightly lighter background for buttons on hover */
-            }
-            QPushButton:pressed {
-                background-color: #777;  /* Even lighter background for buttons when pressed */
-            }
-        """)
+        # Completer for car models, initially empty
+        self.model_completer = QCompleter()
+        self.model_completer.setCaseSensitivity(Qt.CaseInsensitive)
+        self.model_completer.setCompletionMode(QCompleter.PopupCompletion)
+        self.car_model_entry.setCompleter(self.model_completer)
 
-        # Main layout
-        main_layout = QVBoxLayout(self)
-
-        # Car details layout
-        car_details_layout = QFormLayout()
-        self.car_make_entry = QLineEdit()
-        self.car_model_entry = QLineEdit()
-        self.vin_code_entry = QLineEdit()
-        car_details_layout.addRow("მარკა:", self.car_make_entry)
-        car_details_layout.addRow("მოდელი:", self.car_model_entry)
-        car_details_layout.addRow("VIN კოდი:", self.vin_code_entry)
-        main_layout.addLayout(car_details_layout)
+        # Connect car_make_entry text changed signal to update model completer
+        self.car_make_entry.textChanged.connect(self.update_model_completer)
 
         # Owner details layout
         owner_details_layout = QGridLayout()
-        self.owner_name_entry = QLineEdit()
-        self.owner_surname_entry = QLineEdit()
-        self.owner_id_entry = QLineEdit()
-        self.owner_phone_entry = QLineEdit()  # Phone number field
+        # Owner details layout continuation
+        self.owner_name_entry = EnterMoveQLineEdit()
+        self.owner_surname_entry = EnterMoveQLineEdit()
+        self.owner_id_entry = EnterMoveQLineEdit()
+        self.owner_phone_entry = EnterMoveQLineEdit()  # Phone number field
+        self.parking_fee_entry = EnterMoveQLineEdit()
+        self.parking_fee_entry.setText("5")  # Default fee
 
         owner_details_layout.addWidget(QLabel("მფლობელის სახელი:"), 0, 0)
         owner_details_layout.addWidget(self.owner_name_entry, 0, 1)
@@ -177,9 +216,11 @@ class CarEntryDialog(QDialog):
         owner_details_layout.addWidget(self.owner_surname_entry, 0, 3)
         owner_details_layout.addWidget(QLabel("მფლობელის ID ნომერი:"), 1, 0)
         owner_details_layout.addWidget(self.owner_id_entry, 1, 1)
-        owner_details_layout.addWidget(QLabel("მობილურის ნომერი:"), 1, 2)  # Corrected line for adding label
-        owner_details_layout.addWidget(self.owner_phone_entry, 1, 3)  # Corrected line for adding phone number field
+        owner_details_layout.addWidget(QLabel("მობილურის ნომერი:"), 1, 2)
+        owner_details_layout.addWidget(self.owner_phone_entry, 1, 3)
+        # Parking fee entry
 
+        car_details_layout.addRow("დღის ღირებულება:", self.parking_fee_entry)
         main_layout.addLayout(owner_details_layout)
 
         # Dialog buttons
@@ -188,16 +229,19 @@ class CarEntryDialog(QDialog):
         buttons.rejected.connect(self.reject)
         main_layout.addWidget(buttons)
 
-        self.setFixedSize(800, 400)  # Adjusted size for new fields
+        self.setFixedSize(800, 450)  # Adjusted size for new fields
 
     def update_model_completer(self, text):
-        make = text.strip().title()
-        if make in car_dict:
-            models = car_dict[make]
-            self.model_completer.setModel(QtCore.QStringListModel(models))
+        make = text.strip().title()  # Format text for consistency
+        if make in self.car_dict:
+            models = self.car_dict[make]
+            model = QStandardItemModel()
+            for model_name in models:
+                item = QStandardItem(model_name)
+                model.appendRow(item)
+            self.model_completer.setModel(model)
         else:
-            self.model_completer.setModel(QtCore.QStringListModel())
-
+            self.model_completer.setModel(QStandardItemModel())  # Clear the model if the make is not found
     def move_cursor_to_model(self, index):
         self.car_model_entry.setFocus()
 
@@ -208,7 +252,13 @@ class CarEntryDialog(QDialog):
         car_make = self.car_make_entry.text().strip().title()
         car_model = self.car_model_entry.text().strip()
         vin_code = self.vin_code_entry.text().strip().upper()
-
+        try:
+            parking_fee = int(self.parking_fee_entry.text())
+            if parking_fee <= 0:
+                raise ValueError  # Ensure the fee is positive
+        except ValueError:
+            self.show_warning("გთხოვთ, შეიყვანეთ სწორი დაფასება (მხოლოდ დადებითი ციფრები).")
+            return
         if not car_make or not car_model or not vin_code:
             self.show_warning("გთხოვთ შეავსოთ ყველა ველი.")
             return
@@ -311,8 +361,6 @@ class ParkingSpot(QtWidgets.QPushButton):
 
             self.refresh_earnings()
             self.refresh_spot_status()
-
-
 
     def confirm_remove_car(self):
 
@@ -460,7 +508,6 @@ QPushButton:pressed {
             # User confirmed to exit car
             self.exit_car()
 
-
     def show_warning(self, message):
         # Create a separate method for showing warnings if you don't have it already
         warning_dialog = QDialog(self)
@@ -476,6 +523,7 @@ QPushButton:pressed {
         layout.addWidget(ok_button)
         warning_dialog.setLayout(layout)
         warning_dialog.exec()
+
     def exit_car(self):
         entry_info = self.db_conn.execute(
             'SELECT entry_time, car_make, car_model, vin_code FROM parking WHERE spot_id = ? AND exit_time IS NULL',
@@ -494,7 +542,7 @@ QPushButton:pressed {
         exit_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
         parking_duration = datetime.strptime(exit_time, "%Y-%m-%d %H:%M:%S") - entry_time
         total_days = parking_duration.days
-        self.total_fee = max(total_days * 5, 5)
+        self.total_fee = max(total_days * parking_fee, 5)
 
         self.db_conn.execute('UPDATE parking SET exit_time = ?, total_fee = ? WHERE spot_id = ? AND exit_time IS NULL',
                              (exit_time, self.total_fee, self.id))
@@ -546,7 +594,6 @@ QPushButton:pressed {
             """)
             self.setText(f'ადგილი {self.id}')
 
-
     @staticmethod
     def get_today_earnings():
         today = datetime.now().date()
@@ -556,10 +603,6 @@ QPushButton:pressed {
         today_earnings = cursor.fetchone()[0]
         conn.close()
         return today_earnings if today_earnings else 0
-
-
-
-
 
 
 class CustomButton(QtWidgets.QPushButton):
@@ -577,7 +620,6 @@ class CustomButton(QtWidgets.QPushButton):
                     color: #ff5555; /* Lighter red color on hover */
                 }
             """)
-
 
 
 class MainApplication(QtWidgets.QWidget):
@@ -652,7 +694,6 @@ class MainApplication(QtWidgets.QWidget):
         MainApplication.init_db()  # Initialize the database
         self.init_ui()  # Initialize the UI
 
-
     def init_ui(self):
         self.setWindowTitle("Parking System")
         self.setStyleSheet("""
@@ -693,7 +734,7 @@ class MainApplication(QtWidgets.QWidget):
         # Adjust these numbers based on your screen size and desired layout
         rows = 9  # Number of rows in the grid
         cols = 8  # Number of columns in the grid
-        num_buttons = int(self.read_credentials()['number_of_spaces']) # Total number of parking buttons
+        num_buttons = int(self.read_credentials()['number_of_spaces'])  # Total number of parking buttons
 
         self.layout = QtWidgets.QGridLayout()
         button_id = 1
@@ -709,7 +750,6 @@ class MainApplication(QtWidgets.QWidget):
         self.earnings_label.setAlignment(QtCore.Qt.AlignCenter)
         self.layout.addWidget(self.earnings_label, rows, 0, 1, cols)  # Span the label across the bottom
         self.main_layout.addLayout(self.layout)
-
 
     def confirm_exit(self):
         reply = QtWidgets.QMessageBox.question(self, 'დაზუსტება',
