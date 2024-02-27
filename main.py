@@ -479,7 +479,7 @@ QPushButton:pressed {
             border-radius: 5px;
             margin-top: 20px;
         """)
-        finish_button.clicked.connect(lambda: self.user_confirmed_exit(dialog, True))
+        finish_button.clicked.connect(lambda: self.user_confirmed_exit(dialog, self.confirm_exit_with_password()))
         layout.addWidget(finish_button)
 
         # Optionally add a 'Cancel' button
@@ -499,12 +499,99 @@ QPushButton:pressed {
         # Set dialog layout
         dialog.setLayout(layout)
         dialog.exec()
+        # Call this method instead of directly exiting
+
 
     def user_confirmed_exit(self, dialog, confirmed):
         dialog.close()
         if confirmed:
-            # User confirmed to exit car
-            self.exit_car()
+            self.exit_car()  # Call the exit operation
+
+            # Now, delete the record from the parking system database
+
+    def confirm_exit_with_password(self):
+        dialog = QDialog(self)
+        dialog.setWindowTitle("პაროლის შეყვანა")
+        dialog.setFixedSize(300, 200)
+        # Remove window title bar and set modal
+        dialog.setWindowFlags(Qt.FramelessWindowHint | Qt.Dialog)
+        dialog.setAttribute(Qt.WA_TranslucentBackground)  # Make the background transparent
+        dialog.setModal(True)
+
+        # Create a layout
+        layout = QVBoxLayout(dialog)
+
+        # Set dialog stylesheet for dark mode
+        dialog.setStyleSheet("""
+            QDialog {
+                background-color: #333; /* Dark background */
+                color: white; /* White text */
+                border-radius: 10px; /* Rounded corners */
+            }
+            QLabel {
+                color: white; /* White text for labels */
+                background-color: none; /* No specific background */
+                border: none; /* No border */
+            }
+            QLineEdit {
+                border: 2px solid #555; /* Border for line edits */
+                border-radius: 5px;
+                padding: 5px;
+                color: white; /* White text */
+                background-color: #222; /* Darker background for line edits */
+            }
+            QPushButton {
+                border: 2px solid #555; /* Border for buttons */
+                border-radius: 5px;
+                padding: 5px;
+                color: white; /* White text */
+                background-color: #555; /* Darker background for buttons */
+            }
+            QPushButton:hover {
+                background-color: #777; /* Lighter background on hover */
+            }
+            QPushButton:pressed {
+                background-color: #888; /* Even lighter background for buttons when pressed */
+            }
+        """)
+
+        # Add widgets to the layout
+        label = QLabel("პაროლის შეყვანა:")
+        layout.addWidget(label)
+
+        password_entry = QLineEdit()
+        password_entry.setEchoMode(QLineEdit.Password)
+        layout.addWidget(password_entry)
+
+        button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
+        layout.addWidget(button_box)
+
+        # Connect buttons
+        button_box.accepted.connect(lambda: self.check_password_and_exit(password_entry.text(), dialog))
+        button_box.rejected.connect(dialog.reject)
+
+        # Show the dialog
+        dialog.exec()
+
+    def check_password_and_exit(self, entered_password, dialog):
+        # Read the correct password from the file
+        with open('credentials.txt', 'r') as file:
+            credentials = {}
+            for line in file:
+                key, value = line.strip().split(': ')
+                credentials[key] = value
+
+        # Check if the entered password is correct
+        if entered_password == credentials.get('password', ''):
+            self.exit_car()  # Proceed with exiting the car
+            dialog.accept()
+            self.db_conn.execute(
+                'DELETE FROM parking WHERE spot_id = ?',
+                (self.id,))
+            self.db_conn.commit()
+        else:
+            QMessageBox.warning(self, "პაროლი არასწორია", "შეყვანილი პაროლი არასწორია. სცადეთ თავიდან.")
+            dialog.reject()
 
     def show_warning(self, message):
         # Create a separate method for showing warnings if you don't have it already
@@ -524,33 +611,33 @@ QPushButton:pressed {
 
     def exit_car(self):
         entry_info = self.db_conn.execute(
-            'SELECT entry_time, car_make, car_model, vin_code, individual_fee FROM parking WHERE spot_id = ? AND exit_time IS NULL',
+            'SELECT entry_time, car_make, car_model, vin_code, owner_name, owner_surname, owner_id, owner_phone, individual_fee FROM parking WHERE spot_id = ? AND exit_time IS NULL',
             (self.id,)).fetchone()
+
         if entry_info is None:
             self.show_warning("ავტომობილი უკვე გამოსულია სადგომიდან.")
             return
 
-        entry_time_str, car_make, car_model, vin_code, individual_fee = entry_info
-        # Remove fractional seconds from the entry_time_str if present
-        entry_time_str = entry_time_str.split('.')[0]
-        entry_time = datetime.strptime(entry_time_str, "%Y-%m-%d %H:%M:%S")
+        entry_time_str, car_make, car_model, vin_code, owner_name, owner_surname, owner_id, owner_phone, individual_fee = entry_info
+        entry_time = datetime.strptime(entry_time_str.split('.')[0],
+                                       "%Y-%m-%d %H:%M:%S")  # Remove fractional seconds if present
         exit_time = datetime.now()
         total_days = (exit_time.date() - entry_time.date()).days + 1  # Add one to include the current day
+        total_fee = total_days * individual_fee
 
-        # Calculate the total fee based on the number of days and individual fee
-        self.total_fee = total_days * individual_fee
-
-
-        # Update the database to mark the car as exited and record the total fee
+        # Update the parking system database to mark the car as exited
         self.db_conn.execute(
             'UPDATE parking SET exit_time = ?, total_fee = ? WHERE spot_id = ? AND exit_time IS NULL',
-            (exit_time.strftime("%Y-%m-%d %H:%M:%S"), self.total_fee, self.id))
+            (exit_time.strftime("%Y-%m-%d %H:%M:%S"), total_fee, self.id))
         self.db_conn.commit()
 
-        # Record the exit in the parking history database
+        # Insert the exit record into the parking history database
         self.db_conn_history.execute(
-            'INSERT INTO parking_history (car_make, car_model, vin_code, entry_time, exit_time, total_fee) VALUES (?, ?, ?, ?, ?, ?)',
-            (car_make, car_model, vin_code, entry_time_str, exit_time.strftime("%Y-%m-%d %H:%M:%S"), self.total_fee))
+            'INSERT INTO parking_history (car_make, car_model, vin_code, owner_name, owner_surname, owner_id, owner_phone, entry_time, exit_time, total_fee) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            (car_make, car_model, vin_code, entry_info[3], entry_info[4], entry_info[5], entry_info[6], entry_time_str,
+             exit_time.strftime("%Y-%m-%d %H:%M:%S"), total_fee))
+
+
         self.db_conn_history.commit()
 
         # Refresh UI components to reflect the change
