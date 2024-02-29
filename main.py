@@ -393,7 +393,7 @@ class ParkingSpot(QtWidgets.QPushButton):
                 self.db_conn.execute(
                     'INSERT INTO parking (ავტომობილის_მარკა, ავტომობილის_მოდელი, vin_კოდი, სახელი, გვარი, პირადი_ნომერი, ტელეფონის_ნომერი, შესვლა, პარკინგის_ადგილი, ინდივიდუალური_გადასახადი) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
                     (ავტომობილის_მარკა, ავტომობილის_მოდელი, vin_კოდი, სახელი, გვარი, პირადი_ნომერი, ტელეფონის_ნომერი,
-                     datetime.now(),
+                     datetime.now().strftime("%Y-%m-%d"),
                      self.id, ინდივიდუალური_გადასახადი)
                 )
                 self.db_conn.commit()
@@ -416,12 +416,10 @@ class ParkingSpot(QtWidgets.QPushButton):
             return
 
         # Extract car details
-        # Assuming 'entry_info' contains all necessary car and parking information.
-        # Extract car details
         ავტომობილის_მარკა, ავტომობილის_მოდელი, vin_კოდი, სახელი, გვარი, პირადი_ნომერი, ტელეფონის_ნომერი, შესვლა_str, პარკინგის_ადგილი, ინდივიდუალური_გადასახადი = entry_info
 
         # Convert entry and exit timestamps to dates
-        entry_date = datetime.strptime(შესვლა_str, "%Y-%m-%d %H:%M:%S.%f").date()
+        entry_date = datetime.strptime(შესვლა_str, "%Y-%m-%d").date()
         exit_date = datetime.now().date()  # This removes the time part, keeping only the date
 
         ინდივიდუალური_გადასახადი = entry_info[-1]  # Assuming it's the last in the fetched data
@@ -484,7 +482,6 @@ QPushButton:pressed {
 
         """)
 
-        # Create layout and widgets
         # Create layout and widgets
         layout = QVBoxLayout()
         info_widget = QWidget()  # Use a QWidget to contain the label for styling
@@ -641,64 +638,99 @@ QPushButton:pressed {
             msg_box.exec()
 
     def print_car_details(self, parking_spot, status):
+        def add_text(canvas, text, x, y, font, size):
+            canvas.setFont(font, size)
+            canvas.drawString(x, y, text)
+
+        def add_multiline_text(canvas, text, x, y, font, size, line_height):
+            canvas.setFont(font, size)
+            lines = text.split('\n')
+            for i, line in enumerate(lines):
+                canvas.drawString(x, y - i * line_height, line)
+
+        def add_dashed_line(canvas, x, y, length):
+            canvas.setDash(3, 5)  # Pattern: 3 points on, 5 points off
+            canvas.line(x, y, x + length, y)
+            canvas.setDash([])  # Resetting to solid line
+
         # Setup for script and fonts directory
         script_directory = os.path.dirname(os.path.abspath(__file__))
         fonts_directory = os.path.join(script_directory, 'fonts')
+        universal_font_name = 'DejaVuSerif'
+        universal_font_filename = 'DejaVuSerif.ttf'
+        universal_font_path = os.path.join(fonts_directory, universal_font_filename)
+        pdfmetrics.registerFont(TTFont(universal_font_name, universal_font_path))
+        if status in ["entry_check", "exit_check"]:
+            if status == "entry_check":
+                check_width, check_height = 3.1 * 72, 3.1 * 72
+            else:
+                check_width, check_height = 3.1 * 72, 4 * 72
 
-        # Georgian font for Georgian text
-        georgian_font_name = 'NotoGeorgian'
-        georgian_font_filename = 'NotoSansGeorgian-Regular.ttf'
-        georgian_font_path = os.path.join(fonts_directory, georgian_font_filename)
 
-        # Latin font for English text (ensure this font supports the necessary characters)
-        latin_font_name = 'Helvetica'  # Using Helvetica as an example; replace with your Latin font if needed
+        margin = 72 * 0.5
+        line_height = 10  # Adjusted for better readability
 
-        # Register fonts with ReportLab
-        pdfmetrics.registerFont(TTFont(georgian_font_name, georgian_font_path))
-        # pdfmetrics.registerFont(TTFont(latin_font_name, latin_font_path)) for custom Latin fonts
-
-        # Define check size
-        check_width, check_height = 6 * 72, 2.75 * 72
-
-        pdf_filename = f"car_details.pdf"
+        pdf_filename = "car_details.pdf"
         c = canvas.Canvas(pdf_filename, pagesize=(check_width, check_height))
+        c.setTitle("Parking Check")
 
-        if status == "entry_check":
-            db_name = 'parking_system.db'
-        elif status == "exit_check":
-            db_name = 'parking_history.db'
-        else:
-            print("Invalid status")
-            return
-
-
-            # Connect to the database and fetch record
-        conn = sqlite3.connect(os.path.join(script_directory, db_name))
+        # Database connection
+        conn = sqlite3.connect(
+            os.path.join(script_directory, 'parking_system.db' if status == "entry_check" else 'parking_history.db'))
         cursor = conn.cursor()
-        if status == "entry_check":
-            cursor.execute(
-                "SELECT ავტომობილის_მარკა, ავტომობილის_მოდელი, vin_კოდი, სახელი, გვარი, პირადი_ნომერი, შესვლა, ინდივიდუალური_გადასახადი FROM parking WHERE პარკინგის_ადგილი = ?",
-                (parking_spot,))
-            record = cursor.fetchone()
-            ავტომობილის_მარკა, ავტომობილის_მოდელი, vin_კოდი, სახელი, გვარი, პირადი_ნომერი, შესვლა, ინდივიდუალური_გადასახადი = record
-            c.setFont('NotoGeorgian', 5)
-            c.drawString(100, 700, f"ავტომობილის: {ავტომობილის_მარკა} {ავტომობილის_მოდელი}")
-        else:
-            cursor.execute(
-                "SELECT ავტომობილის_მარკა, ავტომობილის_მოდელი, vin_კოდი, სახელი, გვარი, პირადი_ნომერი, ტელეფონის_ნომერი, შესვლა, გამოსვლა, ჯამში_გადახდილი FROM parking_history WHERE პარკინგის_ადგილი = ?",
-                (parking_spot,))
-            record = cursor.fetchone()
-            ავტომობილის_მარკა, ავტომობილის_მოდელი, vin_კოდი, სახელი, გვარი, პირადი_ნომერი, ტელეფონის_ნომერი, შესვლა, გამოსვლა, ჯამში_გადახდილი = record
-            c.setFont('NotoGeorgian', 5)
-            c.drawString(100, 700, f"ავტომობილის: {ავტომობილის_მარკა} {ავტომობილის_მოდელი}")
 
+
+
+        if status in ["entry_check", "exit_check"]:
+            if status == "entry_check":
+                sql_query = "SELECT ავტომობილის_მარკა, ავტომობილის_მოდელი, vin_კოდი, სახელი, გვარი, პირადი_ნომერი, შესვლა, ინდივიდუალური_გადასახადი FROM parking WHERE პარკინგის_ადგილი = ?"
+            else:
+                sql_query = "SELECT ავტომობილის_მარკა, ავტომობილის_მოდელი, vin_კოდი, სახელი, გვარი, პირადი_ნომერი, შესვლა, გამოსვლა, ჯამში_გადახდილი FROM parking_history WHERE პარკინგის_ადგილი = ?"
+            cursor.execute(sql_query, (parking_spot,))
+            record = cursor.fetchone()
+            cursor.close()
+
+
+            if record:
+
+                if status == "exit_check":
+                    headings = ["ავტომობილის მარკა", "მოდელი", "VIN კოდი", "სახელი", "გვარი", "პირადი ნომერი", "შესვლა",
+                                "გამოსვლა","ჯამში_გადახდილი"]
+                else:  # This will be used for "entry_check" by default
+                    headings = ["ავტომობილის მარკა", "მოდელი", "VIN კოდი", "სახელი", "გვარი", "პირადი ნომერი", "შესვლა",
+                                "ინდივიდუალური გადასახადი"]
+
+                for i, (heading, value) in enumerate(zip(headings, record)):
+
+                    if heading != "ჯამში_გადახდილი":
+                        add_multiline_text(c, f"{heading}: {value}", margin,
+                                           check_height - margin - i * line_height * 2,
+                                           universal_font_name, 8, line_height)
+
+                        last_y_position = check_height - margin - len(headings) * line_height * 2
+
+                    else:
+
+                        total_paid_y_position = last_y_position - line_height
+                        add_multiline_text(c, f"გადასახდელი თანხა: {value}", margin-10, total_paid_y_position,
+                                           universal_font_name, 12, line_height)
+
+
+                        # Add footer and dashed lines for aesthetics...
+        add_dashed_line(c, margin, 30, check_width - 2 * margin)  # Adjust Y position as needed
+        add_multiline_text(c, "მადლობა ვიზიტისთვის!", margin, 10, universal_font_name, 10,
+                           12)
+
+
+        # Finalize PDF and close the database connection
         conn.close()
-
-
         c.save()
-
         absolute_path = os.path.abspath(pdf_filename)
         webbrowser.open(f'file://{absolute_path}')
+
+
+
+
 
     def show_warning(self, message):
         # Create a separate method for showing warnings if you don't have it already
@@ -729,7 +761,7 @@ QPushButton:pressed {
 
         # Extracting car and parking informationEnterMoveQLineEdit
         შესვლა_str, ავტომობილის_მარკა, ავტომობილის_მოდელი, vin_კოდი, სახელი, გვარი, პირადი_ნომერი, ტელეფონის_ნომერი, ინდივიდუალური_გადასახადი = entry_info
-        შესვლა = datetime.strptime(შესვლა_str, "%Y-%m-%d %H:%M:%S.%f")
+        შესვლა = datetime.strptime(შესვლა_str, "%Y-%m-%d")
         გამოსვლა = datetime.now()
         total_days = (გამოსვლა.date() - შესვლა.date()).days + 1  # Including the current day
         ჯამში_გადახდილი = total_days * ინდივიდუალური_გადასახადი
@@ -737,7 +769,7 @@ QPushButton:pressed {
         # Updating the database to reflect the car's exit
         self.db_conn.execute(
             'UPDATE parking SET გამოსვლა = ?, ჯამში_გადახდილი = ? WHERE პარკინგის_ადგილი = ? AND გამოსვლა IS NULL',
-            (გამოსვლა.strftime("%Y-%m-%d %H:%M:%S"), ჯამში_გადახდილი, self.id))
+            (გამოსვლა.strftime("%Y-%m-%d"), ჯამში_გადახდილი, self.id))
         self.db_conn.commit()
 
         # Inserting the exit record into the parking history database
@@ -746,7 +778,7 @@ QPushButton:pressed {
             (
                 ავტომობილის_მარკა, ავტომობილის_მოდელი, vin_კოდი, სახელი, გვარი, პირადი_ნომერი, ტელეფონის_ნომერი,
                 შესვლა_str,
-                გამოსვლა.strftime("%Y-%m-%d %H:%M:%S"), ჯამში_გადახდილი, self.id), )
+                გამოსვლა.strftime("%Y-%m-%d"), ჯამში_გადახდილი, self.id), )
         self.db_conn_history.commit()
         self.db_conn.execute(
             'DELETE FROM parking WHERE პარკინგის_ადგილი = ?',
