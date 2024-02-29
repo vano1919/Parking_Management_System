@@ -4,8 +4,10 @@ from PyQt5.QtCore import QStringListModel
 from PySide6.QtWidgets import QCompleter
 from PySide6.QtGui import QStandardItem
 from PySide6.QtGui import QStandardItemModel
-from PySide6.QtWidgets import QCompleter, QDialog, QFormLayout, QLineEdit, QVBoxLayout, QLabel, QDialogButtonBox, QMessageBox, QApplication
-from PySide6.QtCore import Qt, QStringListModel  # Add any other needed modules but you might not need QStringListModel for PySide6
+from PySide6.QtWidgets import QCompleter, QDialog, QFormLayout, QLineEdit, QVBoxLayout, QLabel, QDialogButtonBox, \
+    QMessageBox, QApplication
+from PySide6.QtCore import Qt, \
+    QStringListModel  # Add any other needed modules but you might not need QStringListModel for PySide6
 from PySide6.QtGui import QStandardItem, QStandardItemModel  # Ensure this is correctly placed
 import subprocess
 from PySide6 import QtWidgets, QtGui, QtCore
@@ -14,8 +16,26 @@ from PySide6.QtWidgets import QDialog, QMessageBox, QCompleter, QLabel, QVBoxLay
     QDialogButtonBox, QGridLayout, QFormLayout, QLineEdit
 import sqlite3
 from datetime import datetime
+import os
+import webbrowser
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
+import os
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.pdfbase import pdfmetrics
+import requests
+import os
+import requests
+import sqlite3
+import webbrowser
+from datetime import datetime
+from reportlab.pdfgen import canvas
+from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.pdfbase import pdfmetrics
+from zipfile import ZipFile
 
 
+# T
 
 class EnterMoveQLineEdit(QLineEdit):
     def __init__(self, parent=None):
@@ -26,8 +46,6 @@ class EnterMoveQLineEdit(QLineEdit):
             self.focusNextChild()  # Moves focus to next widget in the tab order
         else:
             super().keyPressEvent(event)  # Handle other key events normally
-
-
 
 
 class CarEntryDialog(QDialog):
@@ -81,147 +99,170 @@ class CarEntryDialog(QDialog):
 
         # Car details layout
         car_details_layout = QFormLayout()
-        self.car_make_entry = EnterMoveQLineEdit()
-        self.car_model_entry = EnterMoveQLineEdit()
-        self.vin_code_entry = EnterMoveQLineEdit()
-        car_details_layout.addRow("მარკა:", self.car_make_entry)
-        car_details_layout.addRow("მოდელი:", self.car_model_entry)
-        car_details_layout.addRow("VIN კოდი:", self.vin_code_entry)
+        self.ავტომობილის_მარკა_entry = EnterMoveQLineEdit()
+        self.ავტომობილის_მოდელი_entry = EnterMoveQLineEdit()
+        self.vin_კოდი_entry = EnterMoveQLineEdit()
+        car_details_layout.addRow("მარკა:", self.ავტომობილის_მარკა_entry)
+        car_details_layout.addRow("მოდელი:", self.ავტომობილის_მოდელი_entry)
+        car_details_layout.addRow("VIN კოდი:", self.vin_კოდი_entry)
         main_layout.addLayout(car_details_layout)
 
         self.car_dict = {
-    "Mitsubishi": ["Outlander", "Eclipse Cross", "Mirage", "Pajero", "L200", "ASX", "Triton", "Space Star", "Montero",
-                   "Galant"],
-    "Chrysler": ["300", "Pacifica", "Voyager", "Aspen", "Sebring", "Crossfire", "PT Cruiser"],
-    "Dodge": ["Charger", "Challenger", "Durango", "Journey", "Grand Caravan", "Dakota", "Viper", "Nitro", "Avenger"],
-    "Subaru": ["Outback", "Forester", "Crosstrek", "Legacy", "Impreza", "Ascent", "BRZ", "WRX", "Levorg", "Baja",
-               "Tribeca"],
-    "Toyota": ["Camry", "Corolla", "RAV4", "Highlander", "Prius", "Sienna", "Tacoma", "Tundra", "4Runner", "Avalon",
-               "Yaris", "Land Cruiser", "Supra", "C-HR", "Sequoia", "Corolla Cross"],
-    "Honda": ["Accord", "Civic", "CR-V", "Pilot", "Odyssey", "Fit", "HR-V", "Ridgeline", "Insight", "Passport",
-              "Clarity", "Element", "CR-Z"],
-    "Aston Martin": ["DB11", "DBS Superleggera", "Vantage", "DBX", "Rapide", "Vanquish", "Virage", "DB7"],
-    "Lexus": ["RX", "ES", "NX", "UX", "IS", "GX", "LS", "LC", "RC", "LFA", "CT", "LX", "HS"],
-    "Lotus": ["Evora", "Exige", "Elise", "Emira"],
-    "Alfa Romeo": ["Giulia", "Stelvio", "4C", "8C", "Giulietta", "Spider", "Brera", "MiTo"],
-    "Maserati": ["Ghibli", "Levante", "Quattroporte", "GranTurismo", "GranCabrio", "Spyder", "Coupe"],
-    "Rolls-Royce": ["Phantom", "Ghost", "Cullinan", "Wraith", "Dawn", "Silver Ghost", "Park Ward", "Corniche"],
-    "Bugatti": ["Chiron", "Divo", "Centodieci", "La Voiture Noire", "EB110", "Veyron"],
-    "Genesis": ["G70", "G80", "G90", "GV80", "GV70", "G60"],
-    "Porsche": ["911", "Cayenne", "Macan", "Panamera", "Taycan", "718", "Carrera GT", "Boxster", "Cayman"],
-    "Mini": ["Cooper", "Countryman", "Clubman", "Convertible", "Paceman", "Roadster", "Coupe"],
-    "Smart": ["EQ fortwo", "Forfour", "Crossblade", "Roadster"],
-    "Fiat": ["500", "500X", "500L", "124 Spider", "Panda", "Tipo", "Punto", "Doblo", "Qubo", "Talento"],
-    "Jaguar": ["F-PACE", "E-PACE", "XE", "XF", "F-TYPE", "I-PACE", "XJ", "XK", "S-Type"],
-    "Volvo": ["XC90", "XC60", "S60", "V60", "XC40", "S90", "V90", "V60 Cross Country", "V90 Cross Country", "P1800",
-              "C30", "S80", "XC70"],
-    "Buick": ["Encore", "Enclave", "Envision", "Regal", "Lacrosse", "Verano", "Cascada"],
-    "Tesla": ["Model S", "Model 3", "Model X", "Model Y", "Roadster", "Cybertruck", "Model C"],
-    "Audi": ["A4", "Q5", "A3", "Q7", "A6", "Q3", "A5", "Q8", "e-tron", "RS 3", "RS 6", "TT", "R8", "S4", "S5", "S6"],
-    "Ford": ["Fusion", "Escape", "Explorer", "F-150", "Mustang", "Edge", "Ranger", "Expedition", "EcoSport", "Transit",
-             "Flex", "Bronco", "Focus", "C-Max", "Taurus"],
-    "Chevrolet": ["Silverado", "Equinox", "Malibu", "Traverse", "Tahoe", "Suburban", "Camaro", "Colorado",
-                  "Trailblazer", "Spark", "Blazer", "Cruze", "Impala", "Volt", "Bolt EV"],
-    "Nissan": ["Altima", "Rogue", "Sentra", "Pathfinder", "Murano", "Versa", "Frontier", "Titan", "Kicks", "Armada",
-               "Maxima", "Leaf", "370Z", "GT-R", "Juke"],
-    "Mercedes-Benz": ["C-Class", "GLC", "E-Class", "GLE", "A-Class", "GLA", "S-Class", "GLS", "CLA", "CLS", "GLB",
-                      "SLC", "SL", "AMG GT", "G-Class", "Maybach"],
-    "BMW": ["3 Series", "X3", "5 Series", "X5", "2 Series", "X1", "4 Series", "7 Series", "X7", "i3", "8 Series", "Z4",
-            "X6", "M2", "M4", "M5", "i8"],
-    "Land Rover": ["Range Rover", "Range Rover Sport", "Range Rover Evoque", "Discovery", "Discovery Sport", "Defender",
-                   "Velar", "Freelander"],
-    "Infiniti": ["QX60", "QX80", "Q50", "QX50", "QX30", "Q60", "FX35", "G35", "G37", "EX35", "M35", "M45"],
-    "Lincoln": ["Navigator", "Aviator", "Corsair", "Nautilus", "MKZ", "Continental", "MKT", "MKX"],
-    "Acura": ["MDX", "RDX", "TLX", "ILX", "RLX", "NSX", "ZDX", "TSX"],
-    "GMC": ["Sierra", "Acadia", "Terrain", "Yukon", "Canyon", "Envoy", "Savana", "Jimmy"],
-    "Ram": ["1500", "2500", "3500", "Promaster", "Promaster City", "Dakota", "Ramcharger"],
-    "Polestar": ["Polestar 1", "Polestar 2", "Polestar 3", "Polestar 4"],
-    "Rivian": ["R1T", "R1S", "R2", "R3"],
-    "Lucid": ["Air", "Gravity", "Dream"],
-    "Koenigsegg": ["Jesko", "Regera", "Gemera", "CCX", "Agera", "One:1", "CCR", "CC8S"],
-    "McLaren": ["570S", "720S", "GT", "600LT", "Speedtail", "P1", "675LT", "765LT"],
-    "Ferrari": ["F8 Tributo", "812 Superfast", "SF90 Stradale", "Roma", "Portofino", "LaFerrari", "488 GTB",
-                "California T"],
-    "Kia": ["Seltos", "Telluride", "Sportage", "Sorento", "Forte", "Stinger", "Rio", "Soul", "Cadenza", "K900",
-            "Optima", "Niro"],
-    "Hyundai": ["Santa Fe", "Tucson", "Palisade", "Elantra", "Sonata", "Accent", "Veloster", "Venue", "Nexo", "Ioniq",
-                "Kona", "Genesis", "Azera"],
-    "Jeep": ["Wrangler", "Grand Cherokee", "Cherokee", "Renegade", "Compass", "Gladiator", "Wagoneer", "Grand Wagoneer",
-             "Patriot", "Liberty"],
-    "Mazda": ["CX-5", "CX-9", "CX-30", "Mazda3", "Mazda6", "MX-5 Miata", "MX-30", "RX-8", "Tribute", "Protege", "CX-3"],
-    "Volkswagen": ["Golf", "Jetta", "Passat", "Tiguan", "Atlas", "Arteon", "Taos", "ID.4", "Atlas Cross Sport",
-                   "Beetle", "CC", "Eos", "Golf R"],
-    "Renault": ["Clio", "Captur", "Megane", "Kadjar", "Duster", "Talisman", "Koleos", "Twingo", "Zoe", "Scenic",
-                "Espace", "Fluence"],
-    "Peugeot": ["208", "2008", "308", "3008", "5008", "508", "Rifter", "Partner", "Traveller", "Expert", "RCZ", "207"],
-    "Citroen": ["C3", "C4", "C5 Aircross", "C1", "C3 Aircross", "C4 Cactus", "Berlingo", "SpaceTourer", "Jumpy", "DS3",
-                "DS4", "DS5"],
-    "Opel": ["Corsa", "Astra", "Crossland", "Grandland X", "Mokka", "Zafira", "Insignia", "Combo", "Vivaro", "Movano",
-             "Meriva", "Adam"],
-    "Fiat": ["500", "500X", "500L", "124 Spider", "Panda", "Tipo", "Punto", "Doblo", "Qubo", "Talento", "Freemont",
-             "Linea"],
-    "Alpine": ["A110", "A310", "A610", "A120", "Berlinette"],
-    "Skoda": ["Octavia", "Superb", "Kodiaq", "Karoq", "Scala", "Fabia", "Citigo", "Enyaq", "Rapid", "Yeti"],
-    "Seat": ["Ibiza", "Leon", "Arona", "Ateca", "Tarraco", "Mii", "Alhambra", "Toledo", "Cupra", "Exeo"],
-    "Dacia": ["Sandero", "Duster", "Logan", "Spring", "Lodgy", "Dokker", "Solenza", "Sandero Stepway"],
-    "Suzuki": ["Swift", "Vitara", "Jimny", "S-Cross", "Ignis", "Baleno", "Celerio", "SX4", "Alto", "Kizashi"],
-    "Lada": ["Granta", "Vesta", "4x4 Urban", "Kalina", "Niva", "XRAY", "Largus", "Priora"],
-    "Geely": ["Coolray", "Azkarra", "Emgrand", "Bo Yue", "Borui", "Vision", "Jiaji", "Xingyue", "Atlas", "Emgrand X7"],
-    "Chery": ["Tiggo 7", "Arrizo 5", "Tiggo 8", "Tiggo 4", "Arrizo 7", "Arrizo 3", "QQ", "Tiggo 3", "Tiggo 5",
-              "Tiggo 2"],
-    "BYD": ["Tang", "Han", "Yuan", "Song", "F3", "Qin", "e2", "S7", "e3", "e1", "e6", "F6", "S2"],
-    "Great Wall": ["Haval H6", "Haval H9", "Haval F7", "Haval F5", "Haval H2", "Haval H4", "Haval H1", "Haval Jolion",
-                   "Wey VV5", "Wey VV7", "Ora R1", "Ora Black Cat"],
-    "BAIC": ["Senova X25", "Senova X55", "Senova X65", "Senova D20", "Senova D50", "Senova D70", "Senova D80",
-             "Senova D60", "Senova D35", "Senova Zhidao", "BJ40", "EU-Series"],
-    "Zotye": ["T600", "T300", "T700", "SR9", "T500", "T700EV", "E200", "Z100", "T600 Coupe", "Langyue", "T800",
-              "Damai X7"],
-    "JAC": ["S2", "S3", "S5", "S7", "iEV7S", "iEV6S", "iEV7", "iEV6E", "iEV6S", "iEV7S", "Refine", "J4"],
-    "Wuling": ["Hong Guang S3", "Hong Guang S5", "Hong Guang MINI EV", "Zhiguang", "Rong Guang", "Zhiguang PLUS",
-               "Zhiguang V", "Zhiguang ONE", "Zhiguang R", "Zhiguang C", "Baojun 510", "Baojun 730"],
-    "WEY": ["VV5", "VV6", "P8", "Tank 300", "Tank 500", "Tank 600", "Tank 700", "Tank 800", "Tank X", "Tank X3", "VV7"],
-    "Hongqi": ["HS5", "HS7", "HS3", "HS8", "E-HS3", "E-HS7", "E-HS9", "E-HS5", "H9", "H5", "L5", "E-HS3"],
-    "Haval": ["Jolion", "Big Dog", "Little Dog", "F5", "F7", "F7X", "F9", "F3", "F3X", "M6", "M4", "H2S"],
-    "Landwind": ["X7", "X5", "X8", "X2", "X9", "X4", "X6", "X3", "X1", "X2", "E33", "E36"]
-}
+            "Mitsubishi": ["Outlander", "Eclipse Cross", "Mirage", "Pajero", "L200", "ASX", "Triton", "Space Star",
+                           "Montero",
+                           "Galant"],
+            "Chrysler": ["300", "Pacifica", "Voyager", "Aspen", "Sebring", "Crossfire", "PT Cruiser"],
+            "Dodge": ["Charger", "Challenger", "Durango", "Journey", "Grand Caravan", "Dakota", "Viper", "Nitro",
+                      "Avenger"],
+            "Subaru": ["Outback", "Forester", "Crosstrek", "Legacy", "Impreza", "Ascent", "BRZ", "WRX", "Levorg",
+                       "Baja",
+                       "Tribeca"],
+            "Toyota": ["Camry", "Corolla", "RAV4", "Highlander", "Prius", "Sienna", "Tacoma", "Tundra", "4Runner",
+                       "Avalon",
+                       "Yaris", "Land Cruiser", "Supra", "C-HR", "Sequoia", "Corolla Cross"],
+            "Honda": ["Accord", "Civic", "CR-V", "Pilot", "Odyssey", "Fit", "HR-V", "Ridgeline", "Insight", "Passport",
+                      "Clarity", "Element", "CR-Z"],
+            "Aston Martin": ["DB11", "DBS Superleggera", "Vantage", "DBX", "Rapide", "Vanquish", "Virage", "DB7"],
+            "Lexus": ["RX", "ES", "NX", "UX", "IS", "GX", "LS", "LC", "RC", "LFA", "CT", "LX", "HS"],
+            "Lotus": ["Evora", "Exige", "Elise", "Emira"],
+            "Alfa Romeo": ["Giulia", "Stelvio", "4C", "8C", "Giulietta", "Spider", "Brera", "MiTo"],
+            "Maserati": ["Ghibli", "Levante", "Quattroporte", "GranTurismo", "GranCabrio", "Spyder", "Coupe"],
+            "Rolls-Royce": ["Phantom", "Ghost", "Cullinan", "Wraith", "Dawn", "Silver Ghost", "Park Ward", "Corniche"],
+            "Bugatti": ["Chiron", "Divo", "Centodieci", "La Voiture Noire", "EB110", "Veyron"],
+            "Genesis": ["G70", "G80", "G90", "GV80", "GV70", "G60"],
+            "Porsche": ["911", "Cayenne", "Macan", "Panamera", "Taycan", "718", "Carrera GT", "Boxster", "Cayman"],
+            "Mini": ["Cooper", "Countryman", "Clubman", "Convertible", "Paceman", "Roadster", "Coupe"],
+            "Smart": ["EQ fortwo", "Forfour", "Crossblade", "Roadster"],
+            "Fiat": ["500", "500X", "500L", "124 Spider", "Panda", "Tipo", "Punto", "Doblo", "Qubo", "Talento"],
+            "Jaguar": ["F-PACE", "E-PACE", "XE", "XF", "F-TYPE", "I-PACE", "XJ", "XK", "S-Type"],
+            "Volvo": ["XC90", "XC60", "S60", "V60", "XC40", "S90", "V90", "V60 Cross Country", "V90 Cross Country",
+                      "P1800",
+                      "C30", "S80", "XC70"],
+            "Buick": ["Encore", "Enclave", "Envision", "Regal", "Lacrosse", "Verano", "Cascada"],
+            "Tesla": ["Model S", "Model 3", "Model X", "Model Y", "Roadster", "Cybertruck", "Model C"],
+            "Audi": ["A4", "Q5", "A3", "Q7", "A6", "Q3", "A5", "Q8", "e-tron", "RS 3", "RS 6", "TT", "R8", "S4", "S5",
+                     "S6"],
+            "Ford": ["Fusion", "Escape", "Explorer", "F-150", "Mustang", "Edge", "Ranger", "Expedition", "EcoSport",
+                     "Transit",
+                     "Flex", "Bronco", "Focus", "C-Max", "Taurus"],
+            "Chevrolet": ["Silverado", "Equinox", "Malibu", "Traverse", "Tahoe", "Suburban", "Camaro", "Colorado",
+                          "Trailblazer", "Spark", "Blazer", "Cruze", "Impala", "Volt", "Bolt EV"],
+            "Nissan": ["Altima", "Rogue", "Sentra", "Pathfinder", "Murano", "Versa", "Frontier", "Titan", "Kicks",
+                       "Armada",
+                       "Maxima", "Leaf", "370Z", "GT-R", "Juke"],
+            "Mercedes-Benz": ["C-Class", "GLC", "E-Class", "GLE", "A-Class", "GLA", "S-Class", "GLS", "CLA", "CLS",
+                              "GLB",
+                              "SLC", "SL", "AMG GT", "G-Class", "Maybach"],
+            "BMW": ["3 Series", "X3", "5 Series", "X5", "2 Series", "X1", "4 Series", "7 Series", "X7", "i3",
+                    "8 Series", "Z4",
+                    "X6", "M2", "M4", "M5", "i8"],
+            "Land Rover": ["Range Rover", "Range Rover Sport", "Range Rover Evoque", "Discovery", "Discovery Sport",
+                           "Defender",
+                           "Velar", "Freelander"],
+            "Infiniti": ["QX60", "QX80", "Q50", "QX50", "QX30", "Q60", "FX35", "G35", "G37", "EX35", "M35", "M45"],
+            "Lincoln": ["Navigator", "Aviator", "Corsair", "Nautilus", "MKZ", "Continental", "MKT", "MKX"],
+            "Acura": ["MDX", "RDX", "TLX", "ILX", "RLX", "NSX", "ZDX", "TSX"],
+            "GMC": ["Sierra", "Acadia", "Terrain", "Yukon", "Canyon", "Envoy", "Savana", "Jimmy"],
+            "Ram": ["1500", "2500", "3500", "Promaster", "Promaster City", "Dakota", "Ramcharger"],
+            "Polestar": ["Polestar 1", "Polestar 2", "Polestar 3", "Polestar 4"],
+            "Rivian": ["R1T", "R1S", "R2", "R3"],
+            "Lucid": ["Air", "Gravity", "Dream"],
+            "Koenigsegg": ["Jesko", "Regera", "Gemera", "CCX", "Agera", "One:1", "CCR", "CC8S"],
+            "McLaren": ["570S", "720S", "GT", "600LT", "Speedtail", "P1", "675LT", "765LT"],
+            "Ferrari": ["F8 Tributo", "812 Superfast", "SF90 Stradale", "Roma", "Portofino", "LaFerrari", "488 GTB",
+                        "California T"],
+            "Kia": ["Seltos", "Telluride", "Sportage", "Sorento", "Forte", "Stinger", "Rio", "Soul", "Cadenza", "K900",
+                    "Optima", "Niro"],
+            "Hyundai": ["Santa Fe", "Tucson", "Palisade", "Elantra", "Sonata", "Accent", "Veloster", "Venue", "Nexo",
+                        "Ioniq",
+                        "Kona", "Genesis", "Azera"],
+            "Jeep": ["Wrangler", "Grand Cherokee", "Cherokee", "Renegade", "Compass", "Gladiator", "Wagoneer",
+                     "Grand Wagoneer",
+                     "Patriot", "Liberty"],
+            "Mazda": ["CX-5", "CX-9", "CX-30", "Mazda3", "Mazda6", "MX-5 Miata", "MX-30", "RX-8", "Tribute", "Protege",
+                      "CX-3"],
+            "Volkswagen": ["Golf", "Jetta", "Passat", "Tiguan", "Atlas", "Arteon", "Taos", "ID.4", "Atlas Cross Sport",
+                           "Beetle", "CC", "Eos", "Golf R"],
+            "Renault": ["Clio", "Captur", "Megane", "Kadjar", "Duster", "Talisman", "Koleos", "Twingo", "Zoe", "Scenic",
+                        "Espace", "Fluence"],
+            "Peugeot": ["208", "2008", "308", "3008", "5008", "508", "Rifter", "Partner", "Traveller", "Expert", "RCZ",
+                        "207"],
+            "Citroen": ["C3", "C4", "C5 Aircross", "C1", "C3 Aircross", "C4 Cactus", "Berlingo", "SpaceTourer", "Jumpy",
+                        "DS3",
+                        "DS4", "DS5"],
+            "Opel": ["Corsa", "Astra", "Crossland", "Grandland X", "Mokka", "Zafira", "Insignia", "Combo", "Vivaro",
+                     "Movano",
+                     "Meriva", "Adam"],
+            "Fiat": ["500", "500X", "500L", "124 Spider", "Panda", "Tipo", "Punto", "Doblo", "Qubo", "Talento",
+                     "Freemont",
+                     "Linea"],
+            "Alpine": ["A110", "A310", "A610", "A120", "Berlinette"],
+            "Skoda": ["Octavia", "Superb", "Kodiaq", "Karoq", "Scala", "Fabia", "Citigo", "Enyaq", "Rapid", "Yeti"],
+            "Seat": ["Ibiza", "Leon", "Arona", "Ateca", "Tarraco", "Mii", "Alhambra", "Toledo", "Cupra", "Exeo"],
+            "Dacia": ["Sandero", "Duster", "Logan", "Spring", "Lodgy", "Dokker", "Solenza", "Sandero Stepway"],
+            "Suzuki": ["Swift", "Vitara", "Jimny", "S-Cross", "Ignis", "Baleno", "Celerio", "SX4", "Alto", "Kizashi"],
+            "Lada": ["Granta", "Vesta", "4x4 Urban", "Kalina", "Niva", "XRAY", "Largus", "Priora"],
+            "Geely": ["Coolray", "Azkarra", "Emgrand", "Bo Yue", "Borui", "Vision", "Jiaji", "Xingyue", "Atlas",
+                      "Emgrand X7"],
+            "Chery": ["Tiggo 7", "Arrizo 5", "Tiggo 8", "Tiggo 4", "Arrizo 7", "Arrizo 3", "QQ", "Tiggo 3", "Tiggo 5",
+                      "Tiggo 2"],
+            "BYD": ["Tang", "Han", "Yuan", "Song", "F3", "Qin", "e2", "S7", "e3", "e1", "e6", "F6", "S2"],
+            "Great Wall": ["Haval H6", "Haval H9", "Haval F7", "Haval F5", "Haval H2", "Haval H4", "Haval H1",
+                           "Haval Jolion",
+                           "Wey VV5", "Wey VV7", "Ora R1", "Ora Black Cat"],
+            "BAIC": ["Senova X25", "Senova X55", "Senova X65", "Senova D20", "Senova D50", "Senova D70", "Senova D80",
+                     "Senova D60", "Senova D35", "Senova Zhidao", "BJ40", "EU-Series"],
+            "Zotye": ["T600", "T300", "T700", "SR9", "T500", "T700EV", "E200", "Z100", "T600 Coupe", "Langyue", "T800",
+                      "Damai X7"],
+            "JAC": ["S2", "S3", "S5", "S7", "iEV7S", "iEV6S", "iEV7", "iEV6E", "iEV6S", "iEV7S", "Refine", "J4"],
+            "Wuling": ["Hong Guang S3", "Hong Guang S5", "Hong Guang MINI EV", "Zhiguang", "Rong Guang",
+                       "Zhiguang PLUS",
+                       "Zhiguang V", "Zhiguang ONE", "Zhiguang R", "Zhiguang C", "Baojun 510", "Baojun 730"],
+            "WEY": ["VV5", "VV6", "P8", "Tank 300", "Tank 500", "Tank 600", "Tank 700", "Tank 800", "Tank X", "Tank X3",
+                    "VV7"],
+            "Hongqi": ["HS5", "HS7", "HS3", "HS8", "E-HS3", "E-HS7", "E-HS9", "E-HS5", "H9", "H5", "L5", "E-HS3"],
+            "Haval": ["Jolion", "Big Dog", "Little Dog", "F5", "F7", "F7X", "F9", "F3", "F3X", "M6", "M4", "H2S"],
+            "Landwind": ["X7", "X5", "X8", "X2", "X9", "X4", "X6", "X3", "X1", "X2", "E33", "E36"]
+        }
 
         # Completer for car makes
         self.make_completer = QCompleter(list(self.car_dict.keys()))
         self.make_completer.setCaseSensitivity(Qt.CaseInsensitive)
         self.make_completer.setCompletionMode(QCompleter.PopupCompletion)
-        self.car_make_entry.setCompleter(self.make_completer)
+        self.ავტომობილის_მარკა_entry.setCompleter(self.make_completer)
 
         # Completer for car models, initially empty
         self.model_completer = QCompleter()
         self.model_completer.setCaseSensitivity(Qt.CaseInsensitive)
         self.model_completer.setCompletionMode(QCompleter.PopupCompletion)
-        self.car_model_entry.setCompleter(self.model_completer)
+        self.ავტომობილის_მოდელი_entry.setCompleter(self.model_completer)
 
-        # Connect car_make_entry text changed signal to update model completer
-        self.car_make_entry.textChanged.connect(self.update_model_completer)
+        # Connect ავტომობილის_მარკა_entry text changed signal to update model completer
+        self.ავტომობილის_მარკა_entry.textChanged.connect(self.update_model_completer)
 
         # Owner details layout
         owner_details_layout = QGridLayout()
         # Owner details layout continuation
-        self.owner_name_entry = EnterMoveQLineEdit()
-        self.owner_surname_entry = EnterMoveQLineEdit()
-        self.owner_id_entry = EnterMoveQLineEdit()
-        self.owner_phone_entry = EnterMoveQLineEdit()  # Phone number field
+        self.სახელი_entry = EnterMoveQLineEdit()
+        self.გვარი_entry = EnterMoveQLineEdit()
+        self.პირადი_ნომერი_entry = EnterMoveQLineEdit()
+        self.ტელეფონის_ნომერი_entry = EnterMoveQLineEdit()  # Phone number field
         # In CarEntryDialog.__init__:
-        self.individual_fee_entry = EnterMoveQLineEdit()
-        self.individual_fee_entry.setText("5")  # Set a default fee or leave blank for user input
+        self.ინდივიდუალური_გადასახადი_entry = EnterMoveQLineEdit()
+        self.ინდივიდუალური_გადასახადი_entry.setText("5")  # Set a default fee or leave blank for user input
 
         owner_details_layout.addWidget(QLabel("მფლობელის სახელი:"), 0, 0)
-        owner_details_layout.addWidget(self.owner_name_entry, 0, 1)
+        owner_details_layout.addWidget(self.სახელი_entry, 0, 1)
         owner_details_layout.addWidget(QLabel("მფლობელის გვარი:"), 0, 2)
-        owner_details_layout.addWidget(self.owner_surname_entry, 0, 3)
+        owner_details_layout.addWidget(self.გვარი_entry, 0, 3)
         owner_details_layout.addWidget(QLabel("მფლობელის ID ნომერი:"), 1, 0)
-        owner_details_layout.addWidget(self.owner_id_entry, 1, 1)
+        owner_details_layout.addWidget(self.პირადი_ნომერი_entry, 1, 1)
         owner_details_layout.addWidget(QLabel("მობილურის ნომერი:"), 1, 2)
-        owner_details_layout.addWidget(self.owner_phone_entry, 1, 3)
+        owner_details_layout.addWidget(self.ტელეფონის_ნომერი_entry, 1, 3)
         # Parking fee entry
 
-        car_details_layout.addRow("პარკინგის ტარიფი:", self.individual_fee_entry)  # Add this to the form layout
+        car_details_layout.addRow("პარკინგის ტარიფი:",
+                                  self.ინდივიდუალური_გადასახადი_entry)  # Add this to the form layout
         main_layout.addLayout(owner_details_layout)
 
         # Dialog buttons
@@ -243,36 +284,36 @@ class CarEntryDialog(QDialog):
             self.model_completer.setModel(model)
         else:
             self.model_completer.setModel(QStandardItemModel())  # Clear the model if the make is not found
+
     def move_cursor_to_model(self, index):
-        self.car_model_entry.setFocus()
+        self.ავტომობილის_მოდელი_entry.setFocus()
 
     def move_cursor_to_vin(self, index):
-        self.vin_code_entry.setFocus()
+        self.vin_კოდი_entry.setFocus()
 
     def validate_and_accept(self):
-        car_make = self.car_make_entry.text().strip().title()
-        car_model = self.car_model_entry.text().strip()
-        vin_code = self.vin_code_entry.text().strip().upper()
+        ავტომობილის_მარკა = self.ავტომობილის_მარკა_entry.text().strip().title()
+        ავტომობილის_მოდელი = self.ავტომობილის_მოდელი_entry.text().strip()
+        vin_კოდი = self.vin_კოდი_entry.text().strip().upper()
 
         try:
-            parking_fee = int(self.individual_fee_entry.text())
+            parking_fee = int(self.ინდივიდუალური_გადასახადი_entry.text())
             if parking_fee <= 0:
                 raise ValueError  # Ensure the fee is positive
         except ValueError:
             self.show_warning("გთხოვთ, შეიყვანეთ სწორი დაფასება (მხოლოდ დადებითი ციფრები).")
             return
-        if not car_make or not car_model or not vin_code:
+        if not ავტომობილის_მარკა or not ავტომობილის_მოდელი or not vin_კოდი:
             self.show_warning("გთხოვთ შეავსოთ ყველა ველი.")
             return
-
 
         vin_regex = re.compile(
             r'^[A-HJ-NPR-Za-hj-npr-z\d]{8}[\dX][A-HJ-NPR-Za-hj-npr-zm\d]{2}\d{6}$')
         # Basic VIN format validation
-        if not vin_regex.match(vin_code):
-            confirm_vin_dialog = self.show_confirm(f"{vin_code} სწორია?")
+        if not vin_regex.match(vin_კოდი):
+            confirm_vin_dialog = self.show_confirm(f"{vin_კოდი} სწორია?")
             if confirm_vin_dialog == QMessageBox.Yes:
-                if not self.vin_code_exists_in_current(vin_code):
+                if not self.vin_კოდი_exists_in_current(vin_კოდი):
                     self.accept()
 
 
@@ -281,31 +322,29 @@ class CarEntryDialog(QDialog):
         else:
             self.accept()
 
-
-
     def show_warning(self, message):
         QMessageBox.warning(self, "გაფრთხილება", message)
 
     def show_confirm(self, message):
         return QMessageBox.question(self, "დაადასტურე", message, QMessageBox.Yes | QMessageBox.No)
 
-    def vin_code_exists_in_current(self, vin_code):
+    def vin_კოდი_exists_in_current(self, vin_კოდი):
         conn = sqlite3.connect('parking_system.db')
         cursor = conn.cursor()
-        cursor.execute("SELECT COUNT(*) FROM parking WHERE vin_code = ?", (vin_code,))
+        cursor.execute("SELECT COUNT(*) FROM parking WHERE vin_კოდი = ?", (vin_კოდი,))
         count = cursor.fetchone()[0]
         conn.close()
         return count > 0
 
     def get_result(self):
         # Ensure all seven fields are being returned:
-        return (self.car_make_entry.text().strip().title(),
-                self.car_model_entry.text().strip(),
-                self.vin_code_entry.text().strip().upper(),
-                self.owner_name_entry.text().strip(),  # Ensure this is correctly capturing input
-                self.owner_surname_entry.text().strip(),  # Ensure this is correctly capturing input
-                self.owner_id_entry.text().strip(),  # Ensure this is correctly capturing input
-                self.owner_phone_entry.text().strip())  # Ensure this is correctly capturing input
+        return (self.ავტომობილის_მარკა_entry.text().strip().title(),
+                self.ავტომობილის_მოდელი_entry.text().strip(),
+                self.vin_კოდი_entry.text().strip().upper(),
+                self.სახელი_entry.text().strip(),  # Ensure this is correctly capturing input
+                self.გვარი_entry.text().strip(),  # Ensure this is correctly capturing input
+                self.პირადი_ნომერი_entry.text().strip(),  # Ensure this is correctly capturing input
+                self.ტელეფონის_ნომერი_entry.text().strip())  # Ensure this is correctly capturing input
 
 
 class ParkingSpot(QtWidgets.QPushButton):
@@ -316,18 +355,18 @@ class ParkingSpot(QtWidgets.QPushButton):
 
     def __init__(self, id, parent=None):
         super().__init__(parent)
-        self.owner_name = None
-        self.owner_surname = None
-        self.owner_id = None
-        self.owner_phone = None
+        self.სახელი = None
+        self.გვარი = None
+        self.პირადი_ნომერი = None
+        self.ტელეფონის_ნომერი = None
         self.id = id
         self.db_conn = sqlite3.connect('parking_system.db')
         self.db_conn_history = sqlite3.connect('parking_history.db')
         self.is_occupied = False
-        self.car_make = None
-        self.car_model = None
-        self.vin_code = None
-        self.total_fee = None
+        self.ავტომობილის_მარკა = None
+        self.ავტომობილის_მოდელი = None
+        self.vin_კოდი = None
+        self.ჯამში_გადახდილი = None
         self.setText(f'ადგილი {self.id}')
         self.setStyleSheet("background-color: green; color: white; font-weight: bold; font-size: 14px;")
         self.setMinimumHeight(50)
@@ -345,17 +384,20 @@ class ParkingSpot(QtWidgets.QPushButton):
         dialog = CarEntryDialog()
         if dialog.exec():
             # Get the results from the dialog
-            car_make, car_model, vin_code, owner_name, owner_surname, owner_id, owner_phone = dialog.get_result()
-            individual_fee = float(dialog.individual_fee_entry.text())  # Get individual fee from the dialog
+            ავტომობილის_მარკა, ავტომობილის_მოდელი, vin_კოდი, სახელი, გვარი, პირადი_ნომერი, ტელეფონის_ნომერი = dialog.get_result()
+            ინდივიდუალური_გადასახადი = float(
+                dialog.ინდივიდუალური_გადასახადი_entry.text())  # Get individual fee from the dialog
 
-            # Insert into the database with individual_fee
+            # Insert into the database with ინდივიდუალური_გადასახადი
             try:
                 self.db_conn.execute(
-                    'INSERT INTO parking (car_make, car_model, vin_code, owner_name, owner_surname, owner_id, owner_phone, entry_time, spot_id, individual_fee) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-                    (car_make, car_model, vin_code, owner_name, owner_surname, owner_id, owner_phone, datetime.now(),
-                     self.id, individual_fee)
+                    'INSERT INTO parking (ავტომობილის_მარკა, ავტომობილის_მოდელი, vin_კოდი, სახელი, გვარი, პირადი_ნომერი, ტელეფონის_ნომერი, შესვლა, პარკინგის_ადგილი, ინდივიდუალური_გადასახადი) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+                    (ავტომობილის_მარკა, ავტომობილის_მოდელი, vin_კოდი, სახელი, გვარი, პირადი_ნომერი, ტელეფონის_ნომერი,
+                     datetime.now(),
+                     self.id, ინდივიდუალური_გადასახადი)
                 )
                 self.db_conn.commit()
+                self.print_car_details(self.id, status="entry_check")
             except sqlite3.Error as e:
                 print("An error occurred:", e)
             self.refresh_earnings()
@@ -365,7 +407,7 @@ class ParkingSpot(QtWidgets.QPushButton):
 
         # Fetch car entry information from the database
         entry_info = self.db_conn.execute(
-            'SELECT car_make, car_model, vin_code, owner_name, owner_surname, owner_id, owner_phone, entry_time, spot_id, individual_fee FROM parking WHERE spot_id = ? AND exit_time IS NULL',
+            'SELECT ავტომობილის_მარკა, ავტომობილის_მოდელი, vin_კოდი, სახელი, გვარი, პირადი_ნომერი, ტელეფონის_ნომერი, შესვლა, პარკინგის_ადგილი, ინდივიდუალური_გადასახადი FROM parking WHERE პარკინგის_ადგილი = ? AND გამოსვლა IS NULL',
             (self.id,)).fetchone()
 
         # Check if car information is not found or already checked out
@@ -376,25 +418,23 @@ class ParkingSpot(QtWidgets.QPushButton):
         # Extract car details
         # Assuming 'entry_info' contains all necessary car and parking information.
         # Extract car details
-        car_make, car_model, vin_code, owner_name, owner_surname, owner_id, owner_phone, entry_time_str, spot_id,individual_fee = entry_info
+        ავტომობილის_მარკა, ავტომობილის_მოდელი, vin_კოდი, სახელი, გვარი, პირადი_ნომერი, ტელეფონის_ნომერი, შესვლა_str, პარკინგის_ადგილი, ინდივიდუალური_გადასახადი = entry_info
 
         # Convert entry and exit timestamps to dates
-        entry_date = datetime.strptime(entry_time_str, "%Y-%m-%d %H:%M:%S.%f").date()
+        entry_date = datetime.strptime(შესვლა_str, "%Y-%m-%d %H:%M:%S.%f").date()
         exit_date = datetime.now().date()  # This removes the time part, keeping only the date
 
-
-        individual_fee = entry_info[-1]  # Assuming it's the last in the fetched data
+        ინდივიდუალური_გადასახადი = entry_info[-1]  # Assuming it's the last in the fetched data
         total_days = (exit_date - entry_date).days + 1
-        self.total_fee = total_days * individual_fee
-
+        self.ჯამში_გადახდილი = total_days * ინდივიდუალური_გადასახადი
 
         # Prepare payment information
-        payment_info = f"<html><head/><body><p><span style='font-weight:600;'>ავტომობილი:</span> {car_make} {car_model}</p>" \
-                       f"<p><span style='font-weight:600;'>VIN კოდი:</span> {vin_code}</p>" \
-                       f"<p><span style='font-weight:600;'>მფლობელი:</span> {owner_name} {owner_surname} ({owner_id})</p>" \
-                       f"<p><span style='font-weight:600;'>ტელ:</span> {owner_phone}</p>" \
+        payment_info = f"<html><head/><body><p><span style='font-weight:600;'>ავტომობილი:</span> {ავტომობილის_მარკა} {ავტომობილის_მოდელი}</p>" \
+                       f"<p><span style='font-weight:600;'>VIN კოდი:</span> {vin_კოდი}</p>" \
+                       f"<p><span style='font-weight:600;'>მფლობელი:</span> {სახელი} {გვარი} ({პირადი_ნომერი})</p>" \
+                       f"<p><span style='font-weight:600;'>ტელ:</span> {ტელეფონის_ნომერი}</p>" \
                        f"<p><span style='font-weight:600;'>ავტომობილი სადგომზე იმყოფებოდა:</span> {total_days} დღე</p>" \
-                       f"<p style='margin-top:20px;'><span style='font-size:18px; font-weight:700;'>სულ გადასახდელია:</span> <span style='font-size:24px; color:#4A90E2;'>{self.total_fee} ლარი</span></p></body></html>"
+                       f"<p style='margin-top:20px;'><span style='font-size:18px; font-weight:700;'>სულ გადასახდელია:</span> <span style='font-size:24px; color:#4A90E2;'>{self.ჯამში_გადახდილი} ლარი</span></p></body></html>"
 
         # Create new dialog
         dialog = QDialog(self)
@@ -501,7 +541,6 @@ QPushButton:pressed {
         dialog.exec()
         # Call this method instead of directly exiting
 
-
     def user_confirmed_exit(self, dialog, confirmed):
         dialog.close()
         if confirmed:
@@ -585,57 +624,82 @@ QPushButton:pressed {
         if entered_password == credentials.get('password', ''):
             self.exit_car()  # Proceed with exiting the car
             dialog.accept()
-            # Assuming self.id contains the spot_id
-            self.print_car_details(spot_id=self.id)  # Call the print function with the parking spot ID
+            # Assuming self.id contains the პარკინგის_ადგილი
+            self.print_car_details(self.id, status="exit_check")
+
+        # Call the print function with the parking spot ID
         else:
-            QMessageBox.warning(self, "Incorrect Password", "The entered password is incorrect. Please try again.")
-            dialog.reject()
+            msg_box = QMessageBox()
+            msg_box.setIcon(QMessageBox.Warning)
+            msg_box.setWindowTitle("პაროლი არასწორია")
+            msg_box.setText("პაროლი არასწორია")
 
-    def print_car_details(self, spot_id):
-        # Connect to the SQLite database
-        conn = sqlite3.connect('parking_system.db')
+            # Resize the QMessageBox
+            msg_box.setGeometry(1, 0, 400, 200)  # Modify these dimensions as needed
+
+            # Show the QMessageBox
+            msg_box.exec()
+
+    def print_car_details(self, parking_spot, status):
+        # Setup for script and fonts directory
+        script_directory = os.path.dirname(os.path.abspath(__file__))
+        fonts_directory = os.path.join(script_directory, 'fonts')
+
+        # Georgian font for Georgian text
+        georgian_font_name = 'NotoGeorgian'
+        georgian_font_filename = 'NotoSansGeorgian-Regular.ttf'
+        georgian_font_path = os.path.join(fonts_directory, georgian_font_filename)
+
+        # Latin font for English text (ensure this font supports the necessary characters)
+        latin_font_name = 'Helvetica'  # Using Helvetica as an example; replace with your Latin font if needed
+
+        # Register fonts with ReportLab
+        pdfmetrics.registerFont(TTFont(georgian_font_name, georgian_font_path))
+        # pdfmetrics.registerFont(TTFont(latin_font_name, latin_font_path)) for custom Latin fonts
+
+        # Define check size
+        check_width, check_height = 6 * 72, 2.75 * 72
+
+        pdf_filename = f"car_details.pdf"
+        c = canvas.Canvas(pdf_filename, pagesize=(check_width, check_height))
+
+        if status == "entry_check":
+            db_name = 'parking_system.db'
+        elif status == "exit_check":
+            db_name = 'parking_history.db'
+        else:
+            print("Invalid status")
+            return
+
+
+            # Connect to the database and fetch record
+        conn = sqlite3.connect(os.path.join(script_directory, db_name))
         cursor = conn.cursor()
+        if status == "entry_check":
+            cursor.execute(
+                "SELECT ავტომობილის_მარკა, ავტომობილის_მოდელი, vin_კოდი, სახელი, გვარი, პირადი_ნომერი, შესვლა, ინდივიდუალური_გადასახადი FROM parking WHERE პარკინგის_ადგილი = ?",
+                (parking_spot,))
+            record = cursor.fetchone()
+            ავტომობილის_მარკა, ავტომობილის_მოდელი, vin_კოდი, სახელი, გვარი, პირადი_ნომერი, შესვლა, ინდივიდუალური_გადასახადი = record
+            c.setFont('NotoGeorgian', 5)
+            c.drawString(100, 700, f"ავტომობილის: {ავტომობილის_მარკა} {ავტომობილის_მოდელი}")
+        else:
+            cursor.execute(
+                "SELECT ავტომობილის_მარკა, ავტომობილის_მოდელი, vin_კოდი, სახელი, გვარი, პირადი_ნომერი, ტელეფონის_ნომერი, შესვლა, გამოსვლა, ჯამში_გადახდილი FROM parking_history WHERE პარკინგის_ადგილი = ?",
+                (parking_spot,))
+            record = cursor.fetchone()
+            ავტომობილის_მარკა, ავტომობილის_მოდელი, vin_კოდი, სახელი, გვარი, პირადი_ნომერი, ტელეფონის_ნომერი, შესვლა, გამოსვლა, ჯამში_გადახდილი = record
+            c.setFont('NotoGeorgian', 5)
+            c.drawString(100, 700, f"ავტომობილის: {ავტომობილის_მარკა} {ავტომობილის_მოდელი}")
 
-        # Prepare the SQL query string
-        query = "SELECT * FROM parking WHERE spot_id = ?"
-
-        # Execute the query with the specific spot_id
-        cursor.execute(query, (self.id,))
-
-        # Fetch all records for the specified spot_id
-        records = cursor.fetchone()
-
-        # Close the database connection
         conn.close()
 
 
+        c.save()
 
-        # Check if car details were found
-        # Unpack the details
-        id,car_make, car_model, vin_code, owner_name, owner_surname, owner_id, owner_phone, entry_time, exit_time,total_fee,spot_id,individual_fee = records
-        exit_time = datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-        if individual_fee is not  float:
-            individual_fee = 5
-        # Format the details into a text block
-        text_to_print = (
-            f"ავტომობილი: {car_make} {car_model} VIN: {vin_code}\n"
-            f"მფლობელი: {owner_name} {owner_surname} {owner_id}\n"
-            f"პარკირების დაწყების თარიღი: {entry_time}\n"
-            f"დღის ღირებულება: {str(individual_fee)}\n"
-        )
+        absolute_path = os.path.abspath(pdf_filename)
+        webbrowser.open(f'file://{absolute_path}')
 
-        # Assuming you're using Windows and Notepad for printing
-        try:
-            with open('temp_car_details.txt', 'w' , "utf-8") as f:
-                f.write(text_to_print)
-            subprocess.run(['notepad', '/p', 'temp_car_details.txt'], check=True)
-
-        except Exception as e:
-            print(f"An error occurred while printing: {e}")
-        self.db_conn.execute(
-            'DELETE FROM parking WHERE spot_id = ?',
-            (self.id,))
-        self.db_conn.commit()
     def show_warning(self, message):
         # Create a separate method for showing warnings if you don't have it already
         warning_dialog = QDialog(self)
@@ -655,7 +719,7 @@ QPushButton:pressed {
     def exit_car(self):
         # Retrieve the car entry information from the database
         entry_info = self.db_conn.execute(
-            'SELECT entry_time, car_make, car_model, vin_code, owner_name, owner_surname, owner_id, owner_phone, individual_fee FROM parking WHERE spot_id = ? AND exit_time IS NULL',
+            'SELECT შესვლა, ავტომობილის_მარკა, ავტომობილის_მოდელი, vin_კოდი, სახელი, გვარი, პირადი_ნომერი, ტელეფონის_ნომერი, ინდივიდუალური_გადასახადი FROM parking WHERE პარკინგის_ადგილი = ? AND გამოსვლა IS NULL',
             (self.id,)).fetchone()
 
         # Check if there is no car information found or if it's already checked out
@@ -663,26 +727,31 @@ QPushButton:pressed {
             self.show_warning("ავტომობილი უკვე გამოსულია სადგომიდან.")  # Car has already exited
             return
 
-        # Extracting car and parking information
-        entry_time_str, car_make, car_model, vin_code, owner_name, owner_surname, owner_id, owner_phone, individual_fee = entry_info
-        entry_time = datetime.strptime(entry_time_str, "%Y-%m-%d %H:%M:%S.%f")
-        exit_time = datetime.now()
-        total_days = (exit_time.date() - entry_time.date()).days + 1  # Including the current day
-        total_fee = total_days * individual_fee
+        # Extracting car and parking informationEnterMoveQLineEdit
+        შესვლა_str, ავტომობილის_მარკა, ავტომობილის_მოდელი, vin_კოდი, სახელი, გვარი, პირადი_ნომერი, ტელეფონის_ნომერი, ინდივიდუალური_გადასახადი = entry_info
+        შესვლა = datetime.strptime(შესვლა_str, "%Y-%m-%d %H:%M:%S.%f")
+        გამოსვლა = datetime.now()
+        total_days = (გამოსვლა.date() - შესვლა.date()).days + 1  # Including the current day
+        ჯამში_გადახდილი = total_days * ინდივიდუალური_გადასახადი
 
         # Updating the database to reflect the car's exit
         self.db_conn.execute(
-            'UPDATE parking SET exit_time = ?, total_fee = ? WHERE spot_id = ? AND exit_time IS NULL',
-            (exit_time.strftime("%Y-%m-%d %H:%M:%S"), total_fee, self.id))
+            'UPDATE parking SET გამოსვლა = ?, ჯამში_გადახდილი = ? WHERE პარკინგის_ადგილი = ? AND გამოსვლა IS NULL',
+            (გამოსვლა.strftime("%Y-%m-%d %H:%M:%S"), ჯამში_გადახდილი, self.id))
         self.db_conn.commit()
 
         # Inserting the exit record into the parking history database
         self.db_conn_history.execute(
-            'INSERT INTO parking_history (car_make, car_model, vin_code, owner_name, owner_surname, owner_id, owner_phone, entry_time, exit_time, total_fee) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-            (car_make, car_model, vin_code, owner_name, owner_surname, owner_id, owner_phone, entry_time_str,
-             exit_time.strftime("%Y-%m-%d %H:%M:%S"), total_fee))
+            'INSERT INTO parking_history (ავტომობილის_მარკა, ავტომობილის_მოდელი, vin_კოდი, სახელი, გვარი, პირადი_ნომერი, ტელეფონის_ნომერი, შესვლა, გამოსვლა, ჯამში_გადახდილი,პარკინგის_ადგილი) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+            (
+                ავტომობილის_მარკა, ავტომობილის_მოდელი, vin_კოდი, სახელი, გვარი, პირადი_ნომერი, ტელეფონის_ნომერი,
+                შესვლა_str,
+                გამოსვლა.strftime("%Y-%m-%d %H:%M:%S"), ჯამში_გადახდილი, self.id), )
         self.db_conn_history.commit()
-
+        self.db_conn.execute(
+            'DELETE FROM parking WHERE პარკინგის_ადგილი = ?',
+            (self.id,))
+        self.db_conn.commit()
         # Refreshing UI components and updating the parking spot status
         self.is_occupied = False
         self.setStyleSheet("background-color: green; color: white; font-weight: bold; font-size: 14px;")
@@ -693,11 +762,11 @@ QPushButton:pressed {
     def refresh_spot_status(self):
 
         car_info = self.db_conn.execute(
-            'SELECT car_make, car_model, vin_code FROM parking WHERE spot_id = ? AND exit_time IS NULL',
+            'SELECT ავტომობილის_მარკა, ავტომობილის_მოდელი, vin_კოდი FROM parking WHERE პარკინგის_ადგილი = ? AND გამოსვლა IS NULL',
             (self.id,)).fetchone()
         if car_info:
             self.is_occupied = True
-            self.car_make, self.car_model, self.vin_code = car_info
+            self.ავტომობილის_მარკა, self.ავტომობილის_მოდელი, self.vin_კოდი = car_info
             # Updated styles for occupied spots
             self.setStyleSheet("""
                 background-color: #D22F2F; /* Darker red for occupied spot */
@@ -730,7 +799,7 @@ QPushButton:pressed {
         today = datetime.now().date()
         conn = sqlite3.connect('parking_history.db')
         cursor = conn.cursor()
-        cursor.execute("SELECT SUM(total_fee) FROM parking_history WHERE DATE(exit_time) = ?", (today,))
+        cursor.execute("SELECT SUM(ჯამში_გადახდილი) FROM parking_history WHERE DATE(გამოსვლა) = ?", (today,))
         today_earnings = cursor.fetchone()[0]
         conn.close()
         return today_earnings if today_earnings else 0
@@ -782,18 +851,18 @@ class MainApplication(QtWidgets.QWidget):
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS parking (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                car_make TEXT,
-                car_model TEXT,
-                vin_code TEXT,
-                owner_name TEXT,
-                owner_surname TEXT,
-                owner_id TEXT,
-                owner_phone TEXT,
-                entry_time TEXT,
-                exit_time TEXT,
-                total_fee REAL,
-                spot_id INTEGER,
-                individual_fee REAL  -- New column for individual parking fee
+                ავტომობილის_მარკა TEXT,
+                ავტომობილის_მოდელი TEXT,
+                vin_კოდი TEXT,
+                სახელი TEXT,
+                გვარი TEXT,
+                პირადი_ნომერი TEXT,
+                ტელეფონის_ნომერი TEXT,
+                შესვლა TEXT,
+                გამოსვლა TEXT,
+                ჯამში_გადახდილი REAL,
+                პარკინგის_ადგილი INTEGER,
+                ინდივიდუალური_გადასახადი REAL  -- New column for individual parking fee
             );
         ''')
         conn.commit()
@@ -804,17 +873,18 @@ class MainApplication(QtWidgets.QWidget):
         cursor_history.execute('''
             CREATE TABLE IF NOT EXISTS parking_history (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
-                car_make TEXT,
-                car_model TEXT,
-                vin_code TEXT,
-                owner_name TEXT,
-                owner_surname TEXT,
-                owner_id TEXT,
-                owner_phone TEXT,
-                entry_time TEXT,
-                exit_time TEXT,
-                total_fee REAL,
-                individual_fee REAL  -- New column for individual parking fee
+                ავტომობილის_მარკა TEXT,
+                ავტომობილის_მოდელი TEXT,
+                vin_კოდი TEXT,
+                სახელი TEXT,
+                გვარი TEXT,
+                პირადი_ნომერი TEXT,
+                ტელეფონის_ნომერი TEXT,
+                შესვლა TEXT,
+                გამოსვლა TEXT,
+                ჯამში_გადახდილი REAL,
+                ინდივიდუალური_გადასახადი REAL,  -- New column for individual parking fee
+                პარკინგის_ადგილი INTEGER
             );
         ''')
         conn_history.commit()
@@ -828,62 +898,70 @@ class MainApplication(QtWidgets.QWidget):
         self.init_ui()  # Initialize the UI
 
     def init_ui(self):
+        # Setting up the window title and stylesheet
         self.setWindowTitle("Parking System")
         self.setStyleSheet("""
-            /* Base styles */
             QWidget {
-                background-color: #1e1e1e; /* Darker background for better contrast */
-                color: #ffffff; /* Lighter text for better readability */
+                background-color: #1e1e1e;
+                color: #ffffff;
             }
             QLabel {
-                color: #e1e1e1; /* Lighter color for better readability */
-                font-size: 16pt; /* Larger font size */
-                margin-top: 20px; /* Space above the label */
+                color: #e1e1e1;
+                font-size: 16pt;
+                margin-top: 20px;
             }
-            /* Add your other styles here */
             QPushButton[type="primary"]:hover {
-                background-color: #ff5555; /* Lighter red color on hover */
+                background-color: #ff5555;
             }
             QPushButton[type="secondary"]:hover {
-                background-color: #3CB371; /* Lighter green color on hover */
+                background-color: #3CB371;
             }
         """)
 
-        self.control_layout = QtWidgets.QHBoxLayout()
+        # Main layout setup
+        self.main_layout = QtWidgets.QVBoxLayout(self)
+        self.setLayout(self.main_layout)
+
+        # Top layout setup for earnings label and minimize/exit buttons
+        self.top_layout = QtWidgets.QHBoxLayout()
+        # Modify the alignment of the earnings label to be centered
+        self.earnings_label = QtWidgets.QLabel(
+            f"\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tდღის ნავაჭრი: {self.get_today_earnings()} ლარი")
+        self.earnings_label.setAlignment(QtCore.Qt.AlignCenter)  # Align the label in the center
+
         self.minimize_button = CustomButton("ჩაკეცვა")
         self.exit_button = CustomButton("გამორთვა")
+        self.top_layout.addWidget(self.earnings_label)
+        self.top_layout.addStretch(1)  # This pushes the following items to the right
+        self.top_layout.addWidget(self.minimize_button)
+        self.top_layout.addWidget(self.exit_button)
+        self.main_layout.addLayout(self.top_layout)
 
-        self.control_layout.addStretch(1)  # Add stretchable space before buttons
-        self.control_layout.addWidget(self.minimize_button)
-        self.control_layout.addWidget(self.exit_button)
-
+        # Minimize and exit actions
         self.minimize_button.clicked.connect(self.showMinimized)
         self.exit_button.clicked.connect(self.confirm_exit)
 
-        self.main_layout = QtWidgets.QVBoxLayout(self)
-        self.setLayout(self.main_layout)
-        self.main_layout.addLayout(self.control_layout)
+        # Scroll area setup for the parking spots
+        self.scrollArea = QtWidgets.QScrollArea()
+        self.scrollArea.setWidgetResizable(True)
+        self.scrollAreaContents = QtWidgets.QWidget()
+        self.scrollArea.setWidget(self.scrollAreaContents)
+        self.gridLayout = QtWidgets.QGridLayout(self.scrollAreaContents)
 
-        # Adjust these numbers based on your screen size and desired layout
-        rows = 9  # Number of rows in the grid
-        cols = 8  # Number of columns in the grid
-        num_buttons = int(self.read_credentials()['number_of_spaces'])  # Total number of parking buttons
-
-        self.layout = QtWidgets.QGridLayout()
+        # Populate the grid with buttons
+        num_buttons = int(self.read_credentials()['number_of_spaces'])
+        rows, cols = (num_buttons, 8)  # Adjust based on your needs
         button_id = 1
         for row in range(rows):
             for col in range(cols):
                 if button_id > num_buttons:
-                    break  # Exit if all buttons have been added
+                    break  # Stop adding buttons if the maximum number is reached
                 button = ParkingSpot(str(button_id))
-                self.layout.addWidget(button, row, col)
+                self.gridLayout.addWidget(button, row, col)
                 button_id += 1
 
-        self.earnings_label = QtWidgets.QLabel(f"დღის ნავაჭრი: {self.get_today_earnings()} ლარი")
-        self.earnings_label.setAlignment(QtCore.Qt.AlignCenter)
-        self.layout.addWidget(self.earnings_label, rows, 0, 1, cols)  # Span the label across the bottom
-        self.main_layout.addLayout(self.layout)
-
+        # Add the scroll area to the main layout, below the top layout
+        self.main_layout.addWidget(self.scrollArea)
 
     def confirm_exit(self):
         reply = QtWidgets.QMessageBox.question(self, 'დაზუსტება',
@@ -899,7 +977,7 @@ class MainApplication(QtWidgets.QWidget):
         today = datetime.now().date()
         conn = sqlite3.connect('parking_history.db')
         cursor = conn.cursor()
-        cursor.execute("SELECT SUM(total_fee) FROM parking_history WHERE DATE(exit_time) = ?", (today,))
+        cursor.execute("SELECT SUM(ჯამში_გადახდილი) FROM parking_history WHERE DATE(გამოსვლა) = ?", (today,))
         today_earnings = cursor.fetchone()[0]
         conn.close()
         return today_earnings if today_earnings else 0
