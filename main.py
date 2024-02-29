@@ -1,5 +1,6 @@
 import sys
 import re
+import shutil
 from PyQt5.QtCore import QStringListModel
 from PySide6.QtWidgets import QCompleter
 from PySide6.QtGui import QStandardItem
@@ -380,7 +381,24 @@ class ParkingSpot(QtWidgets.QPushButton):
         else:
             self.confirm_remove_car()
 
+
     def add_car(self):
+        def backup_database(db_name, backup_dir):
+            """
+            Backs up the specified SQLite database to the backup directory.
+            The backup file is named with the current date for easy identification.
+            """
+            date_str = datetime.now().strftime("%Y-%m-%d")  # Format the current date and time
+            backup_file = os.path.join(backup_dir, f"{db_name}_{date_str}.db")
+            try:
+                # Make sure the backup directory exists
+                os.makedirs(backup_dir, exist_ok=True)
+                # Copy the database file to the backup directory
+                shutil.copy(f"{db_name}.db", backup_file)
+                print(f"Backup of {db_name}.db completed successfully.")
+            except Exception as e:
+                print(f"An error occurred while backing up {db_name}.db: {e}")
+
         dialog = CarEntryDialog()
         if dialog.exec():
             # Get the results from the dialog
@@ -398,6 +416,15 @@ class ParkingSpot(QtWidgets.QPushButton):
                 )
                 self.db_conn.commit()
                 self.print_car_details(self.id, status="entry_check")
+
+                self.db_conn.commit()
+                self.print_car_details(self.id, status="entry_check")
+
+                # New: Backup the databases after a successful transaction
+                script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the directory of the current script
+                backup_database('parking_system', os.path.join(script_dir, 'backups'))
+                backup_database('parking_history', os.path.join(script_dir, 'backups'))
+
             except sqlite3.Error as e:
                 print("An error occurred:", e)
             self.refresh_earnings()
@@ -666,7 +693,6 @@ QPushButton:pressed {
             else:
                 check_width, check_height = 3.1 * 72, 4 * 72
 
-
         margin = 72 * 0.5
         line_height = 10  # Adjusted for better readability
 
@@ -679,8 +705,6 @@ QPushButton:pressed {
             os.path.join(script_directory, 'parking_system.db' if status == "entry_check" else 'parking_history.db'))
         cursor = conn.cursor()
 
-
-
         if status in ["entry_check", "exit_check"]:
             if status == "entry_check":
                 sql_query = "SELECT ავტომობილის_მარკა, ავტომობილის_მოდელი, vin_კოდი, სახელი, გვარი, პირადი_ნომერი, შესვლა, ინდივიდუალური_გადასახადი FROM parking WHERE პარკინგის_ადგილი = ?"
@@ -690,12 +714,11 @@ QPushButton:pressed {
             record = cursor.fetchone()
             cursor.close()
 
-
             if record:
 
                 if status == "exit_check":
                     headings = ["ავტომობილის მარკა", "მოდელი", "VIN კოდი", "სახელი", "გვარი", "პირადი ნომერი", "შესვლა",
-                                "გამოსვლა","ჯამში_გადახდილი"]
+                                "გამოსვლა", "ჯამში_გადახდილი"]
                 else:  # This will be used for "entry_check" by default
                     headings = ["ავტომობილის მარკა", "მოდელი", "VIN კოდი", "სახელი", "გვარი", "პირადი ნომერი", "შესვლა",
                                 "ინდივიდუალური გადასახადი"]
@@ -712,25 +735,19 @@ QPushButton:pressed {
                     else:
 
                         total_paid_y_position = last_y_position - line_height
-                        add_multiline_text(c, f"გადასახდელი თანხა: {value}", margin-10, total_paid_y_position,
+                        add_multiline_text(c, f"გადასახდელი თანხა: {value}", margin - 10, total_paid_y_position,
                                            universal_font_name, 12, line_height)
-
 
                         # Add footer and dashed lines for aesthetics...
         add_dashed_line(c, margin, 30, check_width - 2 * margin)  # Adjust Y position as needed
         add_multiline_text(c, "მადლობა ვიზიტისთვის!", margin, 10, universal_font_name, 10,
                            12)
 
-
         # Finalize PDF and close the database connection
         conn.close()
         c.save()
         absolute_path = os.path.abspath(pdf_filename)
         webbrowser.open(f'file://{absolute_path}')
-
-
-
-
 
     def show_warning(self, message):
         # Create a separate method for showing warnings if you don't have it already
@@ -1016,10 +1033,13 @@ class MainApplication(QtWidgets.QWidget):
 
 
 def main():
-    app = QtWidgets.QApplication(sys.argv)
-    window = MainApplication()
-    window.showFullScreen()
-    sys.exit(app.exec())
+    try:
+        app = QtWidgets.QApplication(sys.argv)
+        window = MainApplication()
+        window.showFullScreen()
+        sys.exit(app.exec())
+    except:
+        pass
 
 
 if __name__ == '__main__':
