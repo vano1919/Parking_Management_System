@@ -1,6 +1,7 @@
 import sys
 import re
 import shutil
+from datetime import datetime, timedelta
 from PyQt5.QtCore import QStringListModel
 from PySide6.QtWidgets import QCompleter
 from PySide6.QtGui import QStandardItem
@@ -388,16 +389,30 @@ class ParkingSpot(QtWidgets.QPushButton):
             Backs up the specified SQLite database to the backup directory.
             The backup file is named with the current date for easy identification.
             """
-            date_str = datetime.now().strftime("%Y-%m-%d")  # Format the current date and time
+            date_str = datetime.now().strftime("%Y-%m-%d-%H")  # Format the current date and time
             backup_file = os.path.join(backup_dir, f"{db_name}_{date_str}.db")
             try:
                 # Make sure the backup directory exists
                 os.makedirs(backup_dir, exist_ok=True)
                 # Copy the database file to the backup directory
                 shutil.copy(f"{db_name}.db", backup_file)
-                print(f"Backup of {db_name}.db completed successfully.")
+
+                # Remove backups older than 5 days
+                for file in os.listdir(backup_dir):
+                    file_path = os.path.join(backup_dir, file)
+                    # Check if the file is a backup of the current database
+                    if file.startswith(db_name) and file.endswith(".db"):
+                        # Get the modification time and compare it with the current time
+                        file_time = datetime.fromtimestamp(os.path.getmtime(file_path))
+                        print(file_time)
+                        if datetime.now() - file_time > timedelta(days=5):
+
+                            os.remove(file_path)
+                            print(f"Removed old backup: {file}")
+
             except Exception as e:
                 print(f"An error occurred while backing up {db_name}.db: {e}")
+
 
         dialog = CarEntryDialog()
         if dialog.exec():
