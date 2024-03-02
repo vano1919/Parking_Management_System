@@ -1,6 +1,9 @@
 import sys
 import re
 import shutil
+from PyQt5.QtCore import Qt
+from PyQt5.QtWidgets import QDialog
+
 from datetime import datetime, timedelta
 from PyQt5.QtCore import QStringListModel
 from PySide6.QtWidgets import QCompleter
@@ -468,17 +471,43 @@ class ParkingSpot(QtWidgets.QPushButton):
         total_days = (exit_date - entry_date).days + 1
         self.ჯამში_გადახდილი = total_days * ინდივიდუალური_გადასახადი
 
-        # Prepare payment information
-        payment_info = f"<html><head/><body><p><span style='font-weight:600;'>ავტომობილი:</span> {ავტომობილის_მარკა} {ავტომობილის_მოდელი}</p>" \
-                       f"<p><span style='font-weight:600;'>VIN კოდი:</span> {vin_კოდი}</p>" \
-                       f"<p><span style='font-weight:600;'>მფლობელი:</span> {სახელი} {გვარი} ({პირადი_ნომერი})</p>" \
-                       f"<p><span style='font-weight:600;'>ტელ:</span> {ტელეფონის_ნომერი}</p>" \
-                       f"<p><span style='font-weight:600;'>ავტომობილი სადგომზე იმყოფებოდა:</span> {total_days} დღე</p>" \
-                       f"<p style='margin-top:20px;'><span style='font-size:18px; font-weight:700;'>სულ გადასახდელია:</span> <span style='font-size:24px; color:#4A90E2;'>{self.ჯამში_გადახდილი} ლარი</span></p></body></html>"
+        payment_info = f"""<html>
+        <head>
+            <style>
+                body {{
+                    font-family: 'Times New Roman', Times, serif; /* Applying Roman-style font */
+                }}
+                .label {{
+                    font-weight: 600;
+                    display: inline-block;
+                    width: 150px; /* Adjust width as needed */
+                }}
+                .value {{
+                    display: inline-block;
+                    text-align: left;
+                    width: 200px; /* Adjust width as needed, ensures consistent text length */
+                }}
+                .total-payment {{
+                    font-size: 24px;
+                    color: #4A90E2;
+                    font-weight: 700; /* Emphasizes total payment */
+                }}
+            </style>
+        </head>
+        <body>
+            <p><span class="label">ავტომობილი:</span> <span class="value">{ავტომობილის_მარკა} {ავტომობილის_მოდელი}</span></p>
+            <p><span class="label">VIN კოდი:</span> <span class="value">{vin_კოდი}</span></p>
+            <p><span class="label">მფლობელი:</span> <span class="value">{სახელი} {გვარი} ({პირადი_ნომერი})</span></p>
+            <p><span class="label">ტელ:</span> <span class="value">{ტელეფონის_ნომერი}</span></p>
+            <p><span class="label">ავტომობილი სადგომზე იმყოფებოდა:</span> <span class="value">{total_days} დღე</span></p>
+            <p style="margin-top:20px;"><span class="font-size:18px; font-weight:700;">სულ გადასახდელია:</span> <span class="total-payment">{self.ჯამში_გადახდილი} ლარი</span></p>
+        </body>
+        </html>"""
 
         # Create new dialog
         dialog = QDialog(self)
-        dialog.setWindowTitle("ავტომობილის გადასახადის შესახებ ინფორმაცია")
+        # Set the window to be frameless
+        dialog.setWindowFlags(Qt.FramelessWindowHint | Qt.Dialog)
         dialog.setFixedSize(500, 500)
         dialog.setStyleSheet("""
             QDialog {
@@ -538,6 +567,7 @@ QPushButton:pressed {
             color: white; /* White text */
         """)
 
+
         info_label = QLabel(payment_info)
         info_label.setAlignment(Qt.AlignCenter)  # Center align the text within the label
         info_label.setStyleSheet("""
@@ -550,7 +580,7 @@ QPushButton:pressed {
         # Create and style the 'Finish Parking' button
         finish_button = QPushButton("პარკინგის დასრულება")
         finish_button.setStyleSheet("""
-            background-color: #4A90E2; /* Consistent blue color for action buttons */
+            background-color: #004225; /* Consistent blue color for action buttons */
             color: white;
             font-weight: bold;
             font-size: 16px;
@@ -564,9 +594,9 @@ QPushButton:pressed {
         # Optionally add a 'Cancel' button
         cancel_button = QPushButton("გაუქმება")
         cancel_button.setStyleSheet("""
-            background-color: #CCCCCC; /* Grey color for cancel button */
-            color: #333333; /* Dark grey text */
-            font-weight: normal;
+            background-color: #D22F2F; /* Grey color for cancel button */
+            color: white; /* Dark grey text */
+            font-weight: bold;
             font-size: 16px;
             padding: 12px 24px;
             border-radius: 5px;
@@ -1053,8 +1083,9 @@ def main():
         window = MainApplication()
         window.showFullScreen()
         sys.exit(app.exec())
-    except:
-        pass
+    except Exception as e:
+
+        print(e)
 
 
 if __name__ == '__main__':
