@@ -12,8 +12,8 @@ from PySide6.QtGui import QStandardItemModel
 from PySide6.QtWidgets import QCompleter, QDialog, QFormLayout, QLineEdit, QVBoxLayout, QLabel, QDialogButtonBox, \
     QMessageBox, QApplication
 from PySide6.QtCore import Qt, \
-    QStringListModel  # Add any other needed modules but you might not need QStringListModel for PySide6
-from PySide6.QtGui import QStandardItem, QStandardItemModel  # Ensure this is correctly placed
+    QStringListModel
+from PySide6.QtGui import QStandardItem, QStandardItemModel
 import subprocess
 from PySide6 import QtWidgets, QtGui, QtCore
 from PySide6.QtCore import Qt
@@ -40,8 +40,9 @@ from reportlab.pdfbase import pdfmetrics
 from zipfile import ZipFile
 
 
-
 class EnterMoveQLineEdit(QLineEdit):
+    """Custom QLineEdit that overrides the keyPressEvent method to switch focus to the next child widget when the Enter or Return key is pressed."""
+
     def __init__(self, parent=None):
         super().__init__(parent)
 
@@ -53,6 +54,8 @@ class EnterMoveQLineEdit(QLineEdit):
 
 
 class CarEntryDialog(QDialog):
+    """Dialog for entering and validating car details such as brand, model, and VIN code. It supports autocomplete for car brands and models."""
+
     def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowFlags(Qt.FramelessWindowHint)
@@ -98,9 +101,7 @@ class CarEntryDialog(QDialog):
             }
         """)
 
-
         main_layout = QVBoxLayout(self)
-
 
         car_details_layout = QFormLayout()
         self.ავტომობილის_მარკა_entry = EnterMoveQLineEdit()
@@ -121,7 +122,6 @@ class CarEntryDialog(QDialog):
                         models = models_str.split(',')
                         car_dict[brand] = models
             return car_dict
-
 
         filename = 'car_brands_and_models.txt'  # Ensure this file exists in the correct directory
         self.car_dict = load_car_dict_from_file(filename)
@@ -160,11 +160,9 @@ class CarEntryDialog(QDialog):
         owner_details_layout.addWidget(QLabel("მობილურის ნომერი:"), 1, 2)
         owner_details_layout.addWidget(self.ტელეფონის_ნომერი_entry, 1, 3)
 
-
         car_details_layout.addRow("პარკინგის ტარიფი:",
                                   self.ინდივიდუალური_გადასახადი_entry)
         main_layout.addLayout(owner_details_layout)
-
 
         buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         buttons.accepted.connect(self.validate_and_accept)
@@ -174,6 +172,7 @@ class CarEntryDialog(QDialog):
         self.setFixedSize(800, 450)
 
     def update_model_completer(self, text):
+        """Updates the car model completer based on the selected car brand."""
         make = text.strip().title()
         if make in self.car_dict:
             models = self.car_dict[make]
@@ -186,12 +185,15 @@ class CarEntryDialog(QDialog):
             self.model_completer.setModel(QStandardItemModel())  # Clear the model if the make is not found
 
     def move_cursor_to_model(self, index):
+        """Sets the focus to the car model entry field."""
         self.ავტომობილის_მოდელი_entry.setFocus()
 
     def move_cursor_to_vin(self, index):
+        """Sets the focus to the VIN code entry field."""
         self.vin_კოდი_entry.setFocus()
 
     def validate_and_accept(self):
+        """Validates car details and closes the dialog if validation is successful."""
         ავტომობილის_მარკა = self.ავტომობილის_მარკა_entry.text().strip().title()
         ავტომობილის_მოდელი = self.ავტომობილის_მოდელი_entry.text().strip()
         vin_კოდი = self.vin_კოდი_entry.text().strip().upper()
@@ -223,12 +225,16 @@ class CarEntryDialog(QDialog):
             self.accept()
 
     def show_warning(self, message):
+        """Displays a warning message dialog."""
+        """Displays a warning message dialog."""
         QMessageBox.warning(self, "გაფრთხილება", message)
 
     def show_confirm(self, message):
+        """Displays a confirmation dialog and returns the user's choice."""
         return QMessageBox.question(self, "დაადასტურე", message, QMessageBox.Yes | QMessageBox.No)
 
     def vin_კოდი_exists_in_current(self, vin_კოდი):
+        """Checks if the given VIN code already exists in the database."""
         conn = sqlite3.connect('parking_system.db')
         cursor = conn.cursor()
         cursor.execute("SELECT COUNT(*) FROM parking WHERE vin_კოდი = ?", (vin_კოდი,))
@@ -237,6 +243,7 @@ class CarEntryDialog(QDialog):
         return count > 0
 
     def get_result(self):
+        """Retrieves the input car details from the form."""
         # Ensure all seven fields are being returned:
         return (self.ავტომობილის_მარკა_entry.text().strip().title(),
                 self.ავტომობილის_მოდელი_entry.text().strip(),
@@ -248,6 +255,8 @@ class CarEntryDialog(QDialog):
 
 
 class ParkingSpot(QtWidgets.QPushButton):
+    """Represents a parking spot in the UI. It can toggle between available and occupied states."""
+
     def refresh_earnings(self):
         earnings_label = self.parent().findChild(QLabel)
         if earnings_label:
@@ -275,12 +284,15 @@ class ParkingSpot(QtWidgets.QPushButton):
         self.refresh_spot_status()
 
     def toggle(self):
+        """Toggles the parking spot's occupancy state."""
         if not self.is_occupied:
             self.add_car()
         else:
             self.confirm_remove_car()
 
     def add_car(self):
+        """Displays a dialog for entering a new car into the parking spot."""
+
         def backup_database(db_name, backup_dir):
             """
             Backs up the specified SQLite database to the backup directory.
@@ -339,8 +351,7 @@ class ParkingSpot(QtWidgets.QPushButton):
             self.refresh_spot_status()
 
     def confirm_remove_car(self):
-
-        # Fetch car entry information from the database
+        """Initiates the car removal process from the parking spot."""
         entry_info = self.db_conn.execute(
             'SELECT ავტომობილის_მარკა, ავტომობილის_მოდელი, vin_კოდი, სახელი, გვარი, პირადი_ნომერი, ტელეფონის_ნომერი, შესვლა, პარკინგის_ადგილი, ინდივიდუალური_გადასახადი FROM parking WHERE პარკინგის_ადგილი = ? AND გამოსვლა IS NULL',
             (self.id,)).fetchone()
@@ -393,7 +404,6 @@ class ParkingSpot(QtWidgets.QPushButton):
             <p style="margin-top:20px;"><span class="font-size:18px; font-weight:700;">სულ:</span> <span class="total-payment">{self.ჯამში_გადახდილი} ლარი</span></p>
         </body>
         </html>"""
-
 
         dialog = QDialog(self)
 
@@ -465,7 +475,6 @@ QPushButton:pressed {
         info_widget_layout.addWidget(info_label)
         layout.addWidget(info_widget)
 
-
         finish_button = QPushButton("პარკინგის დასრულება")
         finish_button.setStyleSheet("""
             background-color: #004225; /* Consistent blue color for action buttons */
@@ -497,6 +506,7 @@ QPushButton:pressed {
         # Call this method instead of directly exiting
 
     def user_confirmed_exit(self, dialog, confirmed):
+        """Finalizes car removal if the user confirms."""
         dialog.close()
         if confirmed:
             self.exit_car()  # Call the exit operation
@@ -504,6 +514,7 @@ QPushButton:pressed {
             # Now, delete the record from the parking system database
 
     def confirm_exit_with_password(self):
+        """Displays a dialog to confirm exit with a password."""
         dialog = QDialog(self)
         dialog.setWindowTitle("პაროლის შეყვანა")
         dialog.setFixedSize(300, 200)
@@ -548,7 +559,6 @@ QPushButton:pressed {
             }
         """)
 
-
         label = QLabel("პაროლის შეყვანა:")
         layout.addWidget(label)
 
@@ -559,14 +569,13 @@ QPushButton:pressed {
         button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         layout.addWidget(button_box)
 
-
         button_box.accepted.connect(lambda: self.check_password_and_exit(password_entry.text(), dialog))
         button_box.rejected.connect(dialog.reject)
-
 
         dialog.exec()
 
     def check_password_and_exit(self, entered_password, dialog):
+        """Checks if the entered password is correct and proceeds with the exit."""
         # Read the correct password from the file
         with open('credentials.txt', 'r') as file:
             credentials = {}
@@ -593,6 +602,8 @@ QPushButton:pressed {
             msg_box.exec()
 
     def print_car_details(self, parking_spot, status):
+        """Prints a ticket with car details for entry or exit."""
+
         def add_text(canvas, text, x, y, font, size):
             canvas.setFont(font, size)
             canvas.drawString(x, y, text)
@@ -678,6 +689,7 @@ QPushButton:pressed {
         webbrowser.open(f'file://{absolute_path}')
 
     def show_warning(self, message):
+        """Displays a warning message dialog."""
         # Create a separate method for showing warnings if you don't have it already
         warning_dialog = QDialog(self)
         warning_dialog.setWindowTitle("გაფრთხილება")
@@ -694,7 +706,7 @@ QPushButton:pressed {
         warning_dialog.exec()
 
     def exit_car(self):
-        # Retrieve the car entry information from the database
+        """Processes the car's exit from the parking spot and updates the database."""
         entry_info = self.db_conn.execute(
             'SELECT შესვლა, ავტომობილის_მარკა, ავტომობილის_მოდელი, vin_კოდი, სახელი, გვარი, პირადი_ნომერი, ტელეფონის_ნომერი, ინდივიდუალური_გადასახადი FROM parking WHERE პარკინგის_ადგილი = ? AND გამოსვლა IS NULL',
             (self.id,)).fetchone()
@@ -736,7 +748,7 @@ QPushButton:pressed {
         self.refresh_spot_status()
 
     def refresh_spot_status(self):
-
+        """Refreshes the parking spot's status (occupied/available)."""
         car_info = self.db_conn.execute(
             'SELECT ავტომობილის_მარკა, ავტომობილის_მოდელი, vin_კოდი FROM parking WHERE პარკინგის_ადგილი = ? AND გამოსვლა IS NULL',
             (self.id,)).fetchone()
@@ -772,6 +784,7 @@ QPushButton:pressed {
 
     @staticmethod
     def get_today_earnings():
+        """Calculates and returns today's earnings from parking fees."""
         today = datetime.now().date()
         conn = sqlite3.connect('parking_history.db')
         cursor = conn.cursor()
@@ -799,9 +812,11 @@ class CustomButton(QtWidgets.QPushButton):
 
 
 class MainApplication(QtWidgets.QWidget):
+    """Main application widget for the parking system."""
 
     @staticmethod
     def read_credentials():
+        """Reads and returns the application's credentials from a file."""
         global global_password
         # Set default values using the global variable
         credentials = {'number_of_spaces': 64, 'password': 1237}
@@ -822,6 +837,7 @@ class MainApplication(QtWidgets.QWidget):
 
     @staticmethod
     def init_db():
+        """Initializes the database for the parking system."""
         conn = sqlite3.connect('parking_system.db')
         cursor = conn.cursor()
         cursor.execute('''
@@ -874,6 +890,7 @@ class MainApplication(QtWidgets.QWidget):
         self.init_ui()
 
     def init_ui(self):
+        """Initializes the UI components of the application."""
 
         self.setWindowTitle("Parking System")
         self.setStyleSheet("""
@@ -939,6 +956,7 @@ class MainApplication(QtWidgets.QWidget):
         self.main_layout.addWidget(self.scrollArea)
 
     def confirm_exit(self):
+        """Displays a confirmation dialog before exiting the application."""
         reply = QtWidgets.QMessageBox.question(self, 'დაზუსტება',
                                                "დარწმუნებული ხარ?",
                                                QtWidgets.QMessageBox.Yes | QtWidgets.QMessageBox.No,
@@ -948,6 +966,7 @@ class MainApplication(QtWidgets.QWidget):
             QtWidgets.QApplication.instance().quit()
 
     def get_today_earnings(self):
+        """Retrieves and returns today's total earnings from the database."""
 
         today = datetime.now().date()
         conn = sqlite3.connect('parking_history.db')
@@ -959,6 +978,7 @@ class MainApplication(QtWidgets.QWidget):
 
 
 def main():
+    """Entry point of the application. Initializes and starts the PyQt application."""
     try:
         app = QtWidgets.QApplication(sys.argv)
         window = MainApplication()
