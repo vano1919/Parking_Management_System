@@ -40,7 +40,6 @@ from reportlab.pdfbase import pdfmetrics
 from zipfile import ZipFile
 
 
-# T
 
 class EnterMoveQLineEdit(QLineEdit):
     def __init__(self, parent=None):
@@ -48,13 +47,13 @@ class EnterMoveQLineEdit(QLineEdit):
 
     def keyPressEvent(self, event):
         if event.key() == Qt.Key_Return or event.key() == Qt.Key_Enter:
-            self.focusNextChild()  # Moves focus to next widget in the tab order
+            self.focusNextChild()
         else:
-            super().keyPressEvent(event)  # Handle other key events normally
+            super().keyPressEvent(event)
 
 
 class CarEntryDialog(QDialog):
-    def __init__(self, parent=None):  # Pass car_dict as parameter
+    def __init__(self, parent=None):
         super().__init__(parent)
         self.setWindowFlags(Qt.FramelessWindowHint)
         self.setWindowTitle("ავტომობილის სადგომზე დამატება")
@@ -99,10 +98,10 @@ class CarEntryDialog(QDialog):
             }
         """)
 
-        # Main layout
+
         main_layout = QVBoxLayout(self)
 
-        # Car details layout
+
         car_details_layout = QFormLayout()
         self.ავტომობილის_მარკა_entry = EnterMoveQLineEdit()
         self.ავტომობილის_მოდელი_entry = EnterMoveQLineEdit()
@@ -116,14 +115,14 @@ class CarEntryDialog(QDialog):
             car_dict = {}
             with open(filename, 'r') as file:
                 for line in file:
-                    parts = line.strip().split(':')  # Split the line into the brand and the models
-                    if len(parts) == 2:  # Ensure there are exactly two parts
+                    parts = line.strip().split(':')
+                    if len(parts) == 2:
                         brand, models_str = parts
-                        models = models_str.split(',')  # Split the models string into a list
+                        models = models_str.split(',')
                         car_dict[brand] = models
             return car_dict
 
-        # Usage
+
         filename = 'car_brands_and_models.txt'  # Ensure this file exists in the correct directory
         self.car_dict = load_car_dict_from_file(filename)
 
@@ -142,14 +141,13 @@ class CarEntryDialog(QDialog):
         # Connect ავტომობილის_მარკა_entry text changed signal to update model completer
         self.ავტომობილის_მარკა_entry.textChanged.connect(self.update_model_completer)
 
-        # Owner details layout
         owner_details_layout = QGridLayout()
-        # Owner details layout continuation
+
         self.სახელი_entry = EnterMoveQLineEdit()
         self.გვარი_entry = EnterMoveQLineEdit()
         self.პირადი_ნომერი_entry = EnterMoveQLineEdit()
         self.ტელეფონის_ნომერი_entry = EnterMoveQLineEdit()  # Phone number field
-        # In CarEntryDialog.__init__:
+
         self.ინდივიდუალური_გადასახადი_entry = EnterMoveQLineEdit()
         self.ინდივიდუალური_გადასახადი_entry.setText("5")  # Set a default fee or leave blank for user input
 
@@ -161,22 +159,22 @@ class CarEntryDialog(QDialog):
         owner_details_layout.addWidget(self.პირადი_ნომერი_entry, 1, 1)
         owner_details_layout.addWidget(QLabel("მობილურის ნომერი:"), 1, 2)
         owner_details_layout.addWidget(self.ტელეფონის_ნომერი_entry, 1, 3)
-        # Parking fee entry
+
 
         car_details_layout.addRow("პარკინგის ტარიფი:",
-                                  self.ინდივიდუალური_გადასახადი_entry)  # Add this to the form layout
+                                  self.ინდივიდუალური_გადასახადი_entry)
         main_layout.addLayout(owner_details_layout)
 
-        # Dialog buttons
+
         buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         buttons.accepted.connect(self.validate_and_accept)
         buttons.rejected.connect(self.reject)
         main_layout.addWidget(buttons)
 
-        self.setFixedSize(800, 450)  # Adjusted size for new fields
+        self.setFixedSize(800, 450)
 
     def update_model_completer(self, text):
-        make = text.strip().title()  # Format text for consistency
+        make = text.strip().title()
         if make in self.car_dict:
             models = self.car_dict[make]
             model = QStandardItemModel()
@@ -293,15 +291,14 @@ class ParkingSpot(QtWidgets.QPushButton):
             try:
                 # Make sure the backup directory exists
                 os.makedirs(backup_dir, exist_ok=True)
-                # Copy the database file to the backup directory
                 shutil.copy(f"{db_name}.db", backup_file)
 
                 # Remove backups older than 5 days
                 for file in os.listdir(backup_dir):
                     file_path = os.path.join(backup_dir, file)
-                    # Check if the file is a backup of the current database
+
                     if file.startswith(db_name) and file.endswith(".db"):
-                        # Get the modification time and compare it with the current time
+
                         file_time = datetime.fromtimestamp(os.path.getmtime(file_path))
 
                         if datetime.now() - file_time > timedelta(days=5):
@@ -332,8 +329,7 @@ class ParkingSpot(QtWidgets.QPushButton):
                 self.db_conn.commit()
                 self.print_car_details(self.id, status="entry_check")
 
-                # New: Backup the databases after a successful transaction
-                script_dir = os.path.dirname(os.path.abspath(__file__))  # Get the directory of the current script
+                script_dir = os.path.dirname(os.path.abspath(__file__))
                 backup_database('parking_system', os.path.join(script_dir, 'backups'))
                 backup_database('parking_history', os.path.join(script_dir, 'backups'))
 
@@ -398,9 +394,9 @@ class ParkingSpot(QtWidgets.QPushButton):
         </body>
         </html>"""
 
-        # Create new dialog
+
         dialog = QDialog(self)
-        # Set the window to be frameless
+
         dialog.setWindowFlags(Qt.FramelessWindowHint | Qt.Dialog)
         dialog.setFixedSize(500, 500)
         dialog.setStyleSheet("""
@@ -447,9 +443,8 @@ QPushButton:pressed {
 
         """)
 
-        # Create layout and widgets
         layout = QVBoxLayout()
-        info_widget = QWidget()  # Use a QWidget to contain the label for styling
+        info_widget = QWidget()
         info_widget_layout = QVBoxLayout(info_widget)
         info_widget_layout.setAlignment(Qt.AlignCenter)  # Center the information
 
@@ -470,7 +465,7 @@ QPushButton:pressed {
         info_widget_layout.addWidget(info_label)
         layout.addWidget(info_widget)
 
-        # Create and style the 'Finish Parking' button
+
         finish_button = QPushButton("პარკინგის დასრულება")
         finish_button.setStyleSheet("""
             background-color: #004225; /* Consistent blue color for action buttons */
@@ -484,7 +479,6 @@ QPushButton:pressed {
         finish_button.clicked.connect(lambda: self.user_confirmed_exit(dialog, self.confirm_exit_with_password()))
         layout.addWidget(finish_button)
 
-        # Optionally add a 'Cancel' button
         cancel_button = QPushButton("გაუქმება")
         cancel_button.setStyleSheet("""
             background-color: #D22F2F; /* Grey color for cancel button */
@@ -498,7 +492,6 @@ QPushButton:pressed {
         cancel_button.clicked.connect(lambda: self.user_confirmed_exit(dialog, False))
         layout.addWidget(cancel_button)
 
-        # Set dialog layout
         dialog.setLayout(layout)
         dialog.exec()
         # Call this method instead of directly exiting
@@ -514,12 +507,11 @@ QPushButton:pressed {
         dialog = QDialog(self)
         dialog.setWindowTitle("პაროლის შეყვანა")
         dialog.setFixedSize(300, 200)
-        # Remove window title bar and set modal
+
         dialog.setWindowFlags(Qt.FramelessWindowHint | Qt.Dialog)
         dialog.setAttribute(Qt.WA_TranslucentBackground)  # Make the background transparent
         dialog.setModal(True)
 
-        # Create a layout
         layout = QVBoxLayout(dialog)
 
         # Set dialog stylesheet for dark mode
@@ -556,7 +548,7 @@ QPushButton:pressed {
             }
         """)
 
-        # Add widgets to the layout
+
         label = QLabel("პაროლის შეყვანა:")
         layout.addWidget(label)
 
@@ -567,11 +559,11 @@ QPushButton:pressed {
         button_box = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
         layout.addWidget(button_box)
 
-        # Connect buttons
+
         button_box.accepted.connect(lambda: self.check_password_and_exit(password_entry.text(), dialog))
         button_box.rejected.connect(dialog.reject)
 
-        # Show the dialog
+
         dialog.exec()
 
     def check_password_and_exit(self, entered_password, dialog):
@@ -584,7 +576,7 @@ QPushButton:pressed {
 
         # Check if the entered password is correct
         if entered_password == credentials.get('password', ''):
-            self.exit_car()  # Proceed with exiting the car
+            self.exit_car()
             dialog.accept()
             # Assuming self.id contains the პარკინგის_ადგილი
             self.print_car_details(self.id, status="exit_check")
@@ -596,10 +588,8 @@ QPushButton:pressed {
             msg_box.setWindowTitle("პაროლი არასწორია")
             msg_box.setText("პაროლი არასწორია")
 
-            # Resize the QMessageBox
-            msg_box.setGeometry(1, 0, 400, 200)  # Modify these dimensions as needed
+            msg_box.setGeometry(1, 0, 400, 200)
 
-            # Show the QMessageBox
             msg_box.exec()
 
     def print_car_details(self, parking_spot, status):
@@ -632,7 +622,7 @@ QPushButton:pressed {
                 check_width, check_height = 3.1 * 72, 4 * 72
 
         margin = 72 * 0.5
-        line_height = 10  # Adjusted for better readability
+        line_height = 10
 
         pdf_filename = "car_details.pdf"
         c = canvas.Canvas(pdf_filename, pagesize=(check_width, check_height))
@@ -714,7 +704,6 @@ QPushButton:pressed {
             self.show_warning("ავტომობილი უკვე გამოსულია სადგომიდან.")  # Car has already exited
             return
 
-        # Extracting car and parking informationEnterMoveQLineEdit
         შესვლა_str, ავტომობილის_მარკა, ავტომობილის_მოდელი, vin_კოდი, სახელი, გვარი, პირადი_ნომერი, ტელეფონის_ნომერი, ინდივიდუალური_გადასახადი = entry_info
         შესვლა = datetime.strptime(შესვლა_str, "%Y-%m-%d")
         გამოსვლა = datetime.now()
@@ -881,11 +870,11 @@ class MainApplication(QtWidgets.QWidget):
         super().__init__()
         credentials = MainApplication.read_credentials()  # Read credentials from file # Use the password from credentials
 
-        MainApplication.init_db()  # Initialize the database
-        self.init_ui()  # Initialize the UI
+        MainApplication.init_db()
+        self.init_ui()
 
     def init_ui(self):
-        # Setting up the window title and stylesheet
+
         self.setWindowTitle("Parking System")
         self.setStyleSheet("""
             QWidget {
@@ -905,7 +894,6 @@ class MainApplication(QtWidgets.QWidget):
             }
         """)
 
-        # Main layout setup
         self.main_layout = QtWidgets.QVBoxLayout(self)
         self.setLayout(self.main_layout)
 
@@ -919,7 +907,7 @@ class MainApplication(QtWidgets.QWidget):
         self.minimize_button = CustomButton("ჩაკეცვა")
         self.exit_button = CustomButton("გამორთვა")
         self.top_layout.addWidget(self.earnings_label)
-        self.top_layout.addStretch(1)  # This pushes the following items to the right
+        self.top_layout.addStretch(1)
         self.top_layout.addWidget(self.minimize_button)
         self.top_layout.addWidget(self.exit_button)
         self.main_layout.addLayout(self.top_layout)
@@ -937,7 +925,7 @@ class MainApplication(QtWidgets.QWidget):
 
         # Populate the grid with buttons
         num_buttons = int(self.read_credentials()['number_of_spaces'])
-        rows, cols = (num_buttons, 8)  # Adjust based on your needs
+        rows, cols = (num_buttons, 8)
         button_id = 1
         for row in range(rows):
             for col in range(cols):
