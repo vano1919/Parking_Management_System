@@ -112,123 +112,20 @@ class CarEntryDialog(QDialog):
         car_details_layout.addRow("VIN კოდი:", self.vin_კოდი_entry)
         main_layout.addLayout(car_details_layout)
 
-        self.car_dict = {
-            "Mitsubishi": ["Outlander", "Eclipse Cross", "Mirage", "Pajero", "L200", "ASX", "Triton", "Space Star",
-                           "Montero",
-                           "Galant"],
-            "Chrysler": ["300", "Pacifica", "Voyager", "Aspen", "Sebring", "Crossfire", "PT Cruiser"],
-            "Dodge": ["Charger", "Challenger", "Durango", "Journey", "Grand Caravan", "Dakota", "Viper", "Nitro",
-                      "Avenger"],
-            "Subaru": ["Outback", "Forester", "Crosstrek", "Legacy", "Impreza", "Ascent", "BRZ", "WRX", "Levorg",
-                       "Baja",
-                       "Tribeca"],
-            "Toyota": ["Camry", "Corolla", "RAV4", "Highlander", "Prius", "Sienna", "Tacoma", "Tundra", "4Runner",
-                       "Avalon",
-                       "Yaris", "Land Cruiser", "Supra", "C-HR", "Sequoia", "Corolla Cross"],
-            "Honda": ["Accord", "Civic", "CR-V", "Pilot", "Odyssey", "Fit", "HR-V", "Ridgeline", "Insight", "Passport",
-                      "Clarity", "Element", "CR-Z"],
-            "Aston Martin": ["DB11", "DBS Superleggera", "Vantage", "DBX", "Rapide", "Vanquish", "Virage", "DB7"],
-            "Lexus": ["RX", "ES", "NX", "UX", "IS", "GX", "LS", "LC", "RC", "LFA", "CT", "LX", "HS"],
-            "Lotus": ["Evora", "Exige", "Elise", "Emira"],
-            "Alfa Romeo": ["Giulia", "Stelvio", "4C", "8C", "Giulietta", "Spider", "Brera", "MiTo"],
-            "Maserati": ["Ghibli", "Levante", "Quattroporte", "GranTurismo", "GranCabrio", "Spyder", "Coupe"],
-            "Rolls-Royce": ["Phantom", "Ghost", "Cullinan", "Wraith", "Dawn", "Silver Ghost", "Park Ward", "Corniche"],
-            "Bugatti": ["Chiron", "Divo", "Centodieci", "La Voiture Noire", "EB110", "Veyron"],
-            "Genesis": ["G70", "G80", "G90", "GV80", "GV70", "G60"],
-            "Porsche": ["911", "Cayenne", "Macan", "Panamera", "Taycan", "718", "Carrera GT", "Boxster", "Cayman"],
-            "Mini": ["Cooper", "Countryman", "Clubman", "Convertible", "Paceman", "Roadster", "Coupe"],
-            "Smart": ["EQ fortwo", "Forfour", "Crossblade", "Roadster"],
-            "Fiat": ["500", "500X", "500L", "124 Spider", "Panda", "Tipo", "Punto", "Doblo", "Qubo", "Talento"],
-            "Jaguar": ["F-PACE", "E-PACE", "XE", "XF", "F-TYPE", "I-PACE", "XJ", "XK", "S-Type"],
-            "Volvo": ["XC90", "XC60", "S60", "V60", "XC40", "S90", "V90", "V60 Cross Country", "V90 Cross Country",
-                      "P1800",
-                      "C30", "S80", "XC70"],
-            "Buick": ["Encore", "Enclave", "Envision", "Regal", "Lacrosse", "Verano", "Cascada"],
-            "Tesla": ["Model S", "Model 3", "Model X", "Model Y", "Roadster", "Cybertruck", "Model C"],
-            "Audi": ["A4", "Q5", "A3", "Q7", "A6", "Q3", "A5", "Q8", "e-tron", "RS 3", "RS 6", "TT", "R8", "S4", "S5",
-                     "S6"],
-            "Ford": ["Fusion", "Escape", "Explorer", "F-150", "Mustang", "Edge", "Ranger", "Expedition", "EcoSport",
-                     "Transit",
-                     "Flex", "Bronco", "Focus", "C-Max", "Taurus"],
-            "Chevrolet": ["Silverado", "Equinox", "Malibu", "Traverse", "Tahoe", "Suburban", "Camaro", "Colorado",
-                          "Trailblazer", "Spark", "Blazer", "Cruze", "Impala", "Volt", "Bolt EV"],
-            "Nissan": ["Altima", "Rogue", "Sentra", "Pathfinder", "Murano", "Versa", "Frontier", "Titan", "Kicks",
-                       "Armada",
-                       "Maxima", "Leaf", "370Z", "GT-R", "Juke"],
-            "Mercedes-Benz": ["C-Class", "GLC", "E-Class", "GLE", "A-Class", "GLA", "S-Class", "GLS", "CLA", "CLS",
-                              "GLB",
-                              "SLC", "SL", "AMG GT", "G-Class", "Maybach"],
-            "BMW": ["3 Series", "X3", "5 Series", "X5", "2 Series", "X1", "4 Series", "7 Series", "X7", "i3",
-                    "8 Series", "Z4",
-                    "X6", "M2", "M4", "M5", "i8"],
-            "Land Rover": ["Range Rover", "Range Rover Sport", "Range Rover Evoque", "Discovery", "Discovery Sport",
-                           "Defender",
-                           "Velar", "Freelander"],
-            "Infiniti": ["QX60", "QX80", "Q50", "QX50", "QX30", "Q60", "FX35", "G35", "G37", "EX35", "M35", "M45"],
-            "Lincoln": ["Navigator", "Aviator", "Corsair", "Nautilus", "MKZ", "Continental", "MKT", "MKX"],
-            "Acura": ["MDX", "RDX", "TLX", "ILX", "RLX", "NSX", "ZDX", "TSX"],
-            "GMC": ["Sierra", "Acadia", "Terrain", "Yukon", "Canyon", "Envoy", "Savana", "Jimmy"],
-            "Ram": ["1500", "2500", "3500", "Promaster", "Promaster City", "Dakota", "Ramcharger"],
-            "Polestar": ["Polestar 1", "Polestar 2", "Polestar 3", "Polestar 4"],
-            "Rivian": ["R1T", "R1S", "R2", "R3"],
-            "Lucid": ["Air", "Gravity", "Dream"],
-            "Koenigsegg": ["Jesko", "Regera", "Gemera", "CCX", "Agera", "One:1", "CCR", "CC8S"],
-            "McLaren": ["570S", "720S", "GT", "600LT", "Speedtail", "P1", "675LT", "765LT"],
-            "Ferrari": ["F8 Tributo", "812 Superfast", "SF90 Stradale", "Roma", "Portofino", "LaFerrari", "488 GTB",
-                        "California T"],
-            "Kia": ["Seltos", "Telluride", "Sportage", "Sorento", "Forte", "Stinger", "Rio", "Soul", "Cadenza", "K900",
-                    "Optima", "Niro"],
-            "Hyundai": ["Santa Fe", "Tucson", "Palisade", "Elantra", "Sonata", "Accent", "Veloster", "Venue", "Nexo",
-                        "Ioniq",
-                        "Kona", "Genesis", "Azera"],
-            "Jeep": ["Wrangler", "Grand Cherokee", "Cherokee", "Renegade", "Compass", "Gladiator", "Wagoneer",
-                     "Grand Wagoneer",
-                     "Patriot", "Liberty"],
-            "Mazda": ["CX-5", "CX-9", "CX-30", "Mazda3", "Mazda6", "MX-5 Miata", "MX-30", "RX-8", "Tribute", "Protege",
-                      "CX-3"],
-            "Volkswagen": ["Golf", "Jetta", "Passat", "Tiguan", "Atlas", "Arteon", "Taos", "ID.4", "Atlas Cross Sport",
-                           "Beetle", "CC", "Eos", "Golf R"],
-            "Renault": ["Clio", "Captur", "Megane", "Kadjar", "Duster", "Talisman", "Koleos", "Twingo", "Zoe", "Scenic",
-                        "Espace", "Fluence"],
-            "Peugeot": ["208", "2008", "308", "3008", "5008", "508", "Rifter", "Partner", "Traveller", "Expert", "RCZ",
-                        "207"],
-            "Citroen": ["C3", "C4", "C5 Aircross", "C1", "C3 Aircross", "C4 Cactus", "Berlingo", "SpaceTourer", "Jumpy",
-                        "DS3",
-                        "DS4", "DS5"],
-            "Opel": ["Corsa", "Astra", "Crossland", "Grandland X", "Mokka", "Zafira", "Insignia", "Combo", "Vivaro",
-                     "Movano",
-                     "Meriva", "Adam"],
-            "Fiat": ["500", "500X", "500L", "124 Spider", "Panda", "Tipo", "Punto", "Doblo", "Qubo", "Talento",
-                     "Freemont",
-                     "Linea"],
-            "Alpine": ["A110", "A310", "A610", "A120", "Berlinette"],
-            "Skoda": ["Octavia", "Superb", "Kodiaq", "Karoq", "Scala", "Fabia", "Citigo", "Enyaq", "Rapid", "Yeti"],
-            "Seat": ["Ibiza", "Leon", "Arona", "Ateca", "Tarraco", "Mii", "Alhambra", "Toledo", "Cupra", "Exeo"],
-            "Dacia": ["Sandero", "Duster", "Logan", "Spring", "Lodgy", "Dokker", "Solenza", "Sandero Stepway"],
-            "Suzuki": ["Swift", "Vitara", "Jimny", "S-Cross", "Ignis", "Baleno", "Celerio", "SX4", "Alto", "Kizashi"],
-            "Lada": ["Granta", "Vesta", "4x4 Urban", "Kalina", "Niva", "XRAY", "Largus", "Priora"],
-            "Geely": ["Coolray", "Azkarra", "Emgrand", "Bo Yue", "Borui", "Vision", "Jiaji", "Xingyue", "Atlas",
-                      "Emgrand X7"],
-            "Chery": ["Tiggo 7", "Arrizo 5", "Tiggo 8", "Tiggo 4", "Arrizo 7", "Arrizo 3", "QQ", "Tiggo 3", "Tiggo 5",
-                      "Tiggo 2"],
-            "BYD": ["Tang", "Han", "Yuan", "Song", "F3", "Qin", "e2", "S7", "e3", "e1", "e6", "F6", "S2"],
-            "Great Wall": ["Haval H6", "Haval H9", "Haval F7", "Haval F5", "Haval H2", "Haval H4", "Haval H1",
-                           "Haval Jolion",
-                           "Wey VV5", "Wey VV7", "Ora R1", "Ora Black Cat"],
-            "BAIC": ["Senova X25", "Senova X55", "Senova X65", "Senova D20", "Senova D50", "Senova D70", "Senova D80",
-                     "Senova D60", "Senova D35", "Senova Zhidao", "BJ40", "EU-Series"],
-            "Zotye": ["T600", "T300", "T700", "SR9", "T500", "T700EV", "E200", "Z100", "T600 Coupe", "Langyue", "T800",
-                      "Damai X7"],
-            "JAC": ["S2", "S3", "S5", "S7", "iEV7S", "iEV6S", "iEV7", "iEV6E", "iEV6S", "iEV7S", "Refine", "J4"],
-            "Wuling": ["Hong Guang S3", "Hong Guang S5", "Hong Guang MINI EV", "Zhiguang", "Rong Guang",
-                       "Zhiguang PLUS",
-                       "Zhiguang V", "Zhiguang ONE", "Zhiguang R", "Zhiguang C", "Baojun 510", "Baojun 730"],
-            "WEY": ["VV5", "VV6", "P8", "Tank 300", "Tank 500", "Tank 600", "Tank 700", "Tank 800", "Tank X", "Tank X3",
-                    "VV7"],
-            "Hongqi": ["HS5", "HS7", "HS3", "HS8", "E-HS3", "E-HS7", "E-HS9", "E-HS5", "H9", "H5", "L5", "E-HS3"],
-            "Haval": ["Jolion", "Big Dog", "Little Dog", "F5", "F7", "F7X", "F9", "F3", "F3X", "M6", "M4", "H2S"],
-            "Landwind": ["X7", "X5", "X8", "X2", "X9", "X4", "X6", "X3", "X1", "X2", "E33", "E36"]
-        }
+        def load_car_dict_from_file(filename):
+            car_dict = {}
+            with open(filename, 'r') as file:
+                for line in file:
+                    parts = line.strip().split(':')  # Split the line into the brand and the models
+                    if len(parts) == 2:  # Ensure there are exactly two parts
+                        brand, models_str = parts
+                        models = models_str.split(',')  # Split the models string into a list
+                        car_dict[brand] = models
+            return car_dict
+
+        # Usage
+        filename = 'car_brands_and_models.txt'  # Ensure this file exists in the correct directory
+        self.car_dict = load_car_dict_from_file(filename)
 
         # Completer for car makes
         self.make_completer = QCompleter(list(self.car_dict.keys()))
@@ -385,7 +282,6 @@ class ParkingSpot(QtWidgets.QPushButton):
         else:
             self.confirm_remove_car()
 
-
     def add_car(self):
         def backup_database(db_name, backup_dir):
             """
@@ -407,15 +303,13 @@ class ParkingSpot(QtWidgets.QPushButton):
                     if file.startswith(db_name) and file.endswith(".db"):
                         # Get the modification time and compare it with the current time
                         file_time = datetime.fromtimestamp(os.path.getmtime(file_path))
-                        print(file_time)
-                        if datetime.now() - file_time > timedelta(days=5):
 
+                        if datetime.now() - file_time > timedelta(days=5):
                             os.remove(file_path)
                             print(f"Removed old backup: {file}")
 
             except Exception as e:
                 print(f"An error occurred while backing up {db_name}.db: {e}")
-
 
         dialog = CarEntryDialog()
         if dialog.exec():
@@ -500,7 +394,7 @@ class ParkingSpot(QtWidgets.QPushButton):
             <p><span class="label">მფლობელი:</span> <span class="value">{სახელი} {გვარი} ({პირადი_ნომერი})</span></p>
             <p><span class="label">ტელ:</span> <span class="value">{ტელეფონის_ნომერი}</span></p>
             <p><span class="label">ავტომობილი სადგომზე იმყოფებოდა:</span> <span class="value">{total_days} დღე</span></p>
-            <p style="margin-top:20px;"><span class="font-size:18px; font-weight:700;">სულ გადასახდელია:</span> <span class="total-payment">{self.ჯამში_გადახდილი} ლარი</span></p>
+            <p style="margin-top:20px;"><span class="font-size:18px; font-weight:700;">სულ:</span> <span class="total-payment">{self.ჯამში_გადახდილი} ლარი</span></p>
         </body>
         </html>"""
 
@@ -566,7 +460,6 @@ QPushButton:pressed {
             padding: 20px;
             color: white; /* White text */
         """)
-
 
         info_label = QLabel(payment_info)
         info_label.setAlignment(Qt.AlignCenter)  # Center align the text within the label
@@ -1084,7 +977,6 @@ def main():
         window.showFullScreen()
         sys.exit(app.exec())
     except Exception as e:
-
         print(e)
 
 
