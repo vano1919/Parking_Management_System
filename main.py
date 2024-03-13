@@ -261,11 +261,6 @@ class CarEntryDialog(QDialog):
 class ParkingSpot(QtWidgets.QPushButton):
 	"""Represents a parking spot in the UI. It can toggle between available and occupied states."""
 
-	def refresh_earnings(self):
-		earnings_label = self.parent().findChild(QLabel)  # Find the earnings label in the parent widget
-		if earnings_label:
-			earnings_label
-			earnings_label.setText(f"დღის ნავაჭრია {self.get_today_earnings()} ლარი")
 
 	def __init__(self, id, parent=None):
 		super().__init__(parent)
@@ -298,6 +293,7 @@ class ParkingSpot(QtWidgets.QPushButton):
 	def add_car(self):
 		"""Displays a dialog for entering a new car into the parking spot."""
 
+
 		def backup_database(db_name, backup_dir):
 			"""
 			Backs up the specified SQLite database to the backup directory.
@@ -321,6 +317,7 @@ class ParkingSpot(QtWidgets.QPushButton):
 						if datetime.now() - file_time > timedelta(days=5):
 							os.remove(file_path)
 							print(f"Removed old backup: {file}")
+
 
 			except Exception as e:
 				print(f"An error occurred while backing up {db_name}.db: {e}")
@@ -350,7 +347,7 @@ class ParkingSpot(QtWidgets.QPushButton):
 
 			except sqlite3.Error as e:
 				print("An error occurred:", e)
-			self.refresh_earnings()
+
 			self.refresh_spot_status()
 
 	def confirm_remove_car(self):
@@ -507,7 +504,7 @@ QPushButton:pressed {
 		dialog.setLayout(layout)
 		dialog.exec()
 		self.refresh_spot_status()
-		self.refresh_earnings()
+
 
 	# Call this method instead of directly exiting
 
@@ -595,7 +592,6 @@ QPushButton:pressed {
 			self.print_car_details(self.id, status="exit_check")
 		# Assuming self.id contains the პარკინგის_ადგილი
 
-		# Call the print function with the parking spot ID
 		else:
 			msg_box = QMessageBox()
 			msg_box.setIcon(QMessageBox.Warning)
@@ -628,7 +624,7 @@ QPushButton:pressed {
 			"""Adds a logo image to the canvas."""
 			canvas.drawImage(logo_path, x, y, width, height)
 
-		# Setup for script and fonts directory
+
 
 
 		universal_font_name = 'DejaVuSerif'
@@ -675,6 +671,13 @@ QPushButton:pressed {
 			record[-1] = გამოსვლა.strftime("%Y-%m-%d")
 			record.append(ჯამში_გადახდილი)
 
+		if status == "entry_check":
+			record = list(record)
+			record.append(parking_spot)
+
+
+
+
 		cursor.close()
 
 		# Print car details from the record
@@ -683,27 +686,32 @@ QPushButton:pressed {
 			            "გამოსვლა", "ჯამში_გადახდილი"] if status == "exit_check" else ["მარკა", "მოდელი",
 			                                                                           "VIN კოდი", "სახელი", "გვარი",
 			                                                                           "პირადი N", "შესვლა",
-			                                                                           "დღეში გადასახდელი"]
+			                                                                           "დღეში გადასახდელი","ადგილი"]
 			for i, (heading, value) in enumerate(zip(headings, record)):
 
-				if heading != "ჯამში_გადახდილი":
-					text = f"{heading}: {value}"
-					strLen = len(f"{heading}: {value}")
-					if strLen < 27:
-						text = f"{heading}:{'_' * (27 - strLen)} {value}"
-
-					# Regular fields
-					add_multiline_text(c,
-					                   text
-					                   , margin, (check_height - margin - i * line_height * 2) / 1.5,
-					                   universal_font_name,
-					                   12,
-					                   line_height)
-				else:  # Total amount paid
-					total_paid_y_position = (check_height - margin - len(
+				if heading == "ადგილი":
+					spot_id_possition = (check_height - margin - len(
 						headings) * line_height * 2 - line_height) / 1.5
-					add_multiline_text(c, f"გადასახდელი თანხა: {value}", margin, total_paid_y_position,
+					add_multiline_text(c, f"საპარკინგე ადგილი N: {value}", margin, spot_id_possition,
 					                   universal_font_name, 14, line_height)
+				else:
+					if heading != "ჯამში_გადახდილი":
+						text = f"{heading}: {value}"
+						strLen = len(f"{heading}: {value}")
+						if strLen < 27:
+							text = f"{heading}:{'_' * (27 - strLen)} {value}"
+
+						add_multiline_text(c,
+						                   text
+						                   , margin, (check_height - margin - i * line_height * 2) / 1.5,
+						                   universal_font_name,
+						                   12,
+						                   line_height)
+					else:
+						total_paid_y_position = (check_height - margin - len(
+							headings) * line_height * 2 - line_height) / 1.5
+						add_multiline_text(c, f"გადასახდელი თანხა: {value}", margin, total_paid_y_position,
+						                   universal_font_name, 14, line_height)
 
 		# Add footer and dashed lines for aesthetics
 		add_dashed_line(c, margin, 30, check_width - 2 * margin)  # Adjust Y position as needed
@@ -727,7 +735,6 @@ QPushButton:pressed {
 			cursor.close()
 
 		self.refresh_spot_status()
-		self.refresh_earnings()
 
 	def show_warning(self, message):
 		"""Displays a warning message dialog."""
@@ -778,11 +785,15 @@ QPushButton:pressed {
 					შესვლა_str,
 					გამოსვლა.strftime("%Y-%m-%d"), ჯამში_გადახდილი, self.id), )
 
+
+
+
 		self.is_occupied = False
 		self.setStyleSheet("background-color: green; color: white; font-weight: bold; font-size: 14px;")
 		self.setText(f'ადგილი {self.id}')
-		self.refresh_earnings()
 		self.refresh_spot_status()
+
+
 
 
 
@@ -812,6 +823,7 @@ QPushButton:pressed {
 			self.setText(f'ადგილი {self.id}')
 		else:
 			self.is_occupied = False
+
 			# Updated styles for unoccupied spots
 			self.setStyleSheet("""
                     background-color: #004225; /* Darker green for available spot */
@@ -825,16 +837,6 @@ QPushButton:pressed {
             """)
 			self.setText(f'ადგილი {self.id}')
 
-	@staticmethod
-	def get_today_earnings():
-		"""Calculates and returns today's earnings from parking fees."""
-		today = datetime.now().date()
-		conn = sqlite3.connect('parking_history.db')
-		cursor = conn.cursor()
-		cursor.execute("SELECT SUM(ჯამში_გადახდილი) FROM parking_history WHERE DATE(გამოსვლა) = ?", (today,))
-		today_earnings = cursor.fetchone()[0]
-		conn.close()
-		return today_earnings if today_earnings else 0
 
 
 class CustomButton(QtWidgets.QPushButton):
@@ -933,44 +935,43 @@ class MainApplication(QtWidgets.QWidget):
 		self.init_ui()
 
 	def init_ui(self):
-
 		"""Initializes the UI components of the application."""
 
 		self.setWindowTitle("Parking System")
 		self.setStyleSheet("""
-            QWidget {
-                background-color: #1e1e1e;
-                color: #ffffff;
-            }
-            QLabel {
-                color: #e1e1e1;
-                font-size: 16pt;
-                margin-top: 20px;
-            }
-            QPushButton[type="primary"]:hover {
-                background-color: #ff5555;
-            }
-            QPushButton[type="secondary"]:hover {
-                background-color: #3CB371;
-            }
-        """)
+	        QWidget {
+	            background-color: #1e1e1e;
+	            color: #ffffff;
+	        }
+	        QLabel {
+	            color: #e1e1e1;
+	            font-size: 16pt;
+	            margin-top: 20px;
+	        }
+	        QPushButton[type="primary"]:hover {
+	            background-color: #ff5555;
+	        }
+	        QPushButton[type="secondary"]:hover {
+	            background-color: #3CB371;
+	        }
+	    """)
 
 		self.main_layout = QtWidgets.QVBoxLayout(self)
 		self.setLayout(self.main_layout)
 
 		# Top layout setup for earnings label and minimize/exit buttons
 		self.top_layout = QtWidgets.QHBoxLayout()
-		# Modify the alignment of the earnings label to be centered
-		self.earnings_label = QtWidgets.QLabel(
-			f"\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\t\tდღის ნავაჭრი: {self.get_today_earnings()} ლარი")
-		self.earnings_label.setAlignment(QtCore.Qt.AlignCenter)  # Align the label in the center
 
+		self.update_earnings_button = CustomButton("ნავაჭრის ნახვა")
 		self.minimize_button = CustomButton("ჩაკეცვა")
 		self.exit_button = CustomButton("გამორთვა")
-		self.top_layout.addWidget(self.earnings_label)
+		self.update_earnings_button.clicked.connect(self.update_earnings)
+
 		self.top_layout.addStretch(1)
+		self.top_layout.addWidget(self.update_earnings_button)
 		self.top_layout.addWidget(self.minimize_button)
 		self.top_layout.addWidget(self.exit_button)
+
 		self.main_layout.addLayout(self.top_layout)
 
 		# Minimize and exit actions
@@ -999,6 +1000,34 @@ class MainApplication(QtWidgets.QWidget):
 		# Add the scroll area to the main layout, below the top layout
 		self.main_layout.addWidget(self.scrollArea)
 
+	def update_earnings(self):
+		dialog = PasswordDialog(self)
+		if dialog.exec():
+			password = dialog.password_entry.text()
+			if password == str(global_password):
+				earnings = self.get_today_earnings()
+				msg_box = QtWidgets.QMessageBox()
+				msg_box.setWindowFlags(Qt.FramelessWindowHint | Qt.Dialog)
+				msg_box.setStyleSheet("""
+	                QMessageBox {
+	                    background-color: #333; /* Dark background */
+	                    color: white; /* White text */
+	                    border: none; /* No border */
+	                }
+	            """)
+				msg_box.information(self, 'ნავაჭრი', f'დღის ნავაჭრი: {earnings} ლარი')
+			else:
+				warning_box = QtWidgets.QMessageBox()
+				warning_box.setWindowFlags(Qt.FramelessWindowHint | Qt.Dialog)
+				warning_box.setStyleSheet("""
+	                QMessageBox {
+	                    background-color: #333; /* Dark background */
+	                    color: white; /* White text */
+	                    border: none; /* No border */
+	                }
+	            """)
+				warning_box.warning(self, 'შეცდომა', 'არასწორი პაროლი.')
+
 	def confirm_exit(self):
 		"""Displays a confirmation dialog before exiting the application."""
 		reply = QtWidgets.QMessageBox.question(self, 'დაზუსტება',
@@ -1008,6 +1037,7 @@ class MainApplication(QtWidgets.QWidget):
 
 		if reply == QtWidgets.QMessageBox.Yes:
 			QtWidgets.QApplication.instance().quit()
+
 
 	def get_today_earnings(self):
 		"""Retrieves and returns today's total earnings from the database."""
@@ -1019,11 +1049,51 @@ class MainApplication(QtWidgets.QWidget):
 		today_earnings = cursor.fetchone()[0]
 		conn.close()
 		return today_earnings if today_earnings else 0
+class PasswordDialog(QDialog):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.setFixedSize(200, 100)
+        self.setWindowFlags(Qt.FramelessWindowHint | Qt.Dialog)
+        self.setStyleSheet("""
+            QDialog {
+                background-color: #333; /* Dark background */
+                color: white; /* White text */
+                border-radius: 10px; /* Rounded corners */
+            }
+            QLabel {
+                color: white; /* White text for labels */
+                background-color: none; /* No specific background */
+                border: none; /* No border */
+            }
+            QLineEdit {
+                border: 2px solid #555; /* Border for line edits */
+                border-radius: 5px;
+                padding: 5px;
+                color: white; /* White text */
+                background-color: #222; /* Darker background for line edits */
+            }
+            QPushButton {
+                border: 2px solid #555; /* Border for buttons */
+                border-radius: 5px;
+                padding: 5px;
+                color: white; /* White text */
+                background-color: #555; /* Darker background for buttons */
+            }
+            QPushButton:hover {
+                background-color: #777; /* Lighter background on hover */
+            }
+            QPushButton:pressed {
+                background-color: #888; /* Even lighter background for buttons when pressed */
+            }
+        """)
 
-
-
-
-
+        layout = QVBoxLayout(self)
+        self.password_entry = QLineEdit()
+        self.password_entry.setEchoMode(QLineEdit.Password)
+        layout.addWidget(self.password_entry)
+        ok_button = QPushButton('კარგი')
+        ok_button.clicked.connect(self.accept)
+        layout.addWidget(ok_button)
 def main():
 	"""Entry point of the application. Initializes and starts the PyQt application."""
 	try:
