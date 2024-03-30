@@ -26,17 +26,10 @@ Follow these steps to install and set up ParkMaster on your local machine:
 
 1. Clone the repository to your local machine:
    ```
-   git clone https://github.com/yourusername/ParkMaster.git
+   git clone https://github.com/vano1919/Parking_Management_System.git
    ```
-2. Navigate to the ParkMaster directory:
-   ```
-   cd ParkMaster
-   ```
-3. Install the necessary Python packages (preferably in a virtual environment):
-   ```
-   pip install -r requirements.txt
-   ```
-4. Run the main application script to launch the system:
+
+2. Run the main application script to launch the system:
    ```
    python main.py
    ```
@@ -44,17 +37,3 @@ Follow these steps to install and set up ParkMaster on your local machine:
 **Usage:**
 
 After launching ParkMaster, navigate through the GUI to register vehicles, assign parking spots, and manage existing records. The system is intuitive and guides the user through each process step by step.
-
-For detailed usage instructions, please refer to the user manual provided in the documentation folder.
-
-**Contribution:**
-
-Contributions to ParkMaster are welcome! Please fork the repository, make your changes, and submit a pull request for review.
-
-**Support:**
-
-For support and queries, please open an issue in the GitHub repository, and a contributor will address it as soon as possible.
-
-**License:**
-
-ParkMaster is released under the MIT License. See the LICENSE file in the project repository for more details.
