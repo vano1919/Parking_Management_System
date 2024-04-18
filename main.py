@@ -33,7 +33,7 @@ The script defines several classes:
 
 1. EnterMoveQLineEdit: A custom QLineEdit that overrides the keyPressEvent method to switch focus to the next child widget when the Enter or Return key is pressed.
 
-2. CarEntryDialog: A dialog for entering and validating car details such as brand, model, and VIN code. It supports autocomplete for car brands and models.
+2. CarEntryDialog: A dialog for entering and validating car details such as brand, model, and vin_code. It supports autocomplete for car brands and models.
 
 3. ParkingSpot: Represents a parking spot in the UI. It can toggle between available and occupied states. It also has methods for adding a car, confirming car removal, printing car details, showing warnings, exiting a car, refreshing the spot status, and getting today's earnings.
 
@@ -61,7 +61,7 @@ class EnterMoveQLineEdit(QLineEdit):
 
 
 class CarEntryDialog(QDialog):
-	"""Dialog for entering and validating car details such as brand, model, and VIN code. It supports autocomplete for car brands and models."""
+	"""Dialog for entering and validating car details such as brand, model, and vin_code. It supports autocomplete for car brands and models."""
 
 	def __init__(self, parent=None):
 		super().__init__(parent)
@@ -111,12 +111,12 @@ class CarEntryDialog(QDialog):
 		main_layout = QVBoxLayout(self)
 
 		car_details_layout = QFormLayout()
-		self.ავტომობილის_მარკა_entry = EnterMoveQLineEdit()
-		self.ავტომობილის_მოდელი_entry = EnterMoveQLineEdit()
-		self.vin_კოდი_entry = EnterMoveQLineEdit()
-		car_details_layout.addRow("მარკა:", self.ავტომობილის_მარკა_entry)
-		car_details_layout.addRow("მოდელი:", self.ავტომობილის_მოდელი_entry)
-		car_details_layout.addRow("VIN კოდი:", self.vin_კოდი_entry)
+		self.make_entry = EnterMoveQLineEdit()
+		self.model_entry = EnterMoveQLineEdit()
+		self.vin_code_entry = EnterMoveQLineEdit()
+		car_details_layout.addRow("car_make:", self.make_entry)
+		car_details_layout.addRow("car_model:", self.model_entry)
+		car_details_layout.addRow("vin_code:", self.vin_code_entry)
 		main_layout.addLayout(car_details_layout)
 
 		def load_car_dict_from_file(filename):
@@ -137,38 +137,38 @@ class CarEntryDialog(QDialog):
 		self.make_completer = QCompleter(list(self.car_dict.keys()))
 		self.make_completer.setCaseSensitivity(Qt.CaseInsensitive)
 		self.make_completer.setCompletionMode(QCompleter.PopupCompletion)
-		self.ავტომობილის_მარკა_entry.setCompleter(self.make_completer)
+		self.make_entry.setCompleter(self.make_completer)
 
 		# Completer for car models, initially empty
 		self.model_completer = QCompleter()
 		self.model_completer.setCaseSensitivity(Qt.CaseInsensitive)
 		self.model_completer.setCompletionMode(QCompleter.PopupCompletion)
-		self.ავტომობილის_მოდელი_entry.setCompleter(self.model_completer)
+		self.model_entry.setCompleter(self.model_completer)
 
-		# Connect ავტომობილის_მარკა_entry text changed signal to update model completer
-		self.ავტომობილის_მარკა_entry.textChanged.connect(self.update_model_completer)
+		# Connect make_entry text changed signal to update model completer
+		self.make_entry.textChanged.connect(self.update_model_completer)
 
 		owner_details_layout = QGridLayout()
 
-		self.სახელი_entry = EnterMoveQLineEdit()
-		self.გვარი_entry = EnterMoveQLineEdit()
-		self.პირადი_ნომერი_entry = EnterMoveQLineEdit()
-		self.ტელეფონის_ნომერი_entry = EnterMoveQLineEdit()  # Phone number field
+		self.name_entry = EnterMoveQLineEdit()
+		self.surname_entry = EnterMoveQLineEdit()
+		self.ID_entry = EnterMoveQLineEdit()
+		self.tel_entry = EnterMoveQLineEdit()  # Phone number field
 
-		self.ინდივიდუალური_გადასახადი_entry = EnterMoveQLineEdit()
-		self.ინდივიდუალური_გადასახადი_entry.setText("5")  # Set a default fee or leave blank for user input
+		self.individual_charge_entry = EnterMoveQLineEdit()
+		self.individual_charge_entry.setText("5")  # Set a default fee or leave blank for user input
 
-		owner_details_layout.addWidget(QLabel("მფლობელის სახელი:"), 0, 0)
-		owner_details_layout.addWidget(self.სახელი_entry, 0, 1)
-		owner_details_layout.addWidget(QLabel("მფლობელის გვარი:"), 0, 2)
-		owner_details_layout.addWidget(self.გვარი_entry, 0, 3)
+		owner_details_layout.addWidget(QLabel("მფლობელის name:"), 0, 0)
+		owner_details_layout.addWidget(self.name_entry, 0, 1)
+		owner_details_layout.addWidget(QLabel("მფლობელის surname:"), 0, 2)
+		owner_details_layout.addWidget(self.surname_entry, 0, 3)
 		owner_details_layout.addWidget(QLabel("მფლობელის ID ნომერი:"), 1, 0)
-		owner_details_layout.addWidget(self.პირადი_ნომერი_entry, 1, 1)
+		owner_details_layout.addWidget(self.ID_entry, 1, 1)
 		owner_details_layout.addWidget(QLabel("მობილურის ნომერი:"), 1, 2)
-		owner_details_layout.addWidget(self.ტელეფონის_ნომერი_entry, 1, 3)
+		owner_details_layout.addWidget(self.tel_entry, 1, 3)
 
 		car_details_layout.addRow("პარკინგის ტარიფი:",
-		                          self.ინდივიდუალური_გადასახადი_entry)
+		                          self.individual_charge_entry)
 		main_layout.addLayout(owner_details_layout)
 
 		buttons = QDialogButtonBox(QDialogButtonBox.Ok | QDialogButtonBox.Cancel)
@@ -193,41 +193,41 @@ class CarEntryDialog(QDialog):
 
 	def move_cursor_to_model(self, index):
 		"""Sets the focus to the car model entry field."""
-		self.ავტომობილის_მოდელი_entry.setFocus()
+		self.model_entry.setFocus()
 
 	def move_cursor_to_vin(self, index):
-		"""Sets the focus to the VIN code entry field."""
-		self.vin_კოდი_entry.setFocus()
+		"""Sets the focus to the vin_code entry field."""
+		self.vin_code_entry.setFocus()
 
 	def validate_and_accept(self):
 		"""Validates car details and closes the dialog if validation is successful."""
-		ავტომობილის_მარკა = self.ავტომობილის_მარკა_entry.text().strip().title()
-		ავტომობილის_მოდელი = self.ავტომობილის_მოდელი_entry.text().strip()
-		vin_კოდი = self.vin_კოდი_entry.text().strip().upper()
+		car_make = self.make_entry.text().strip().title()
+		car_model = self.model_entry.text().strip()
+		vin_code = self.vin_code_entry.text().strip().upper()
 
 		try:
-			parking_fee = int(self.ინდივიდუალური_გადასახადი_entry.text())
+			parking_fee = int(self.individual_charge_entry.text())
 			if parking_fee <= 0:
 				raise ValueError  # Ensure the fee is positive
 		except ValueError:
 			self.show_warning("გთხოვთ, შეიყვანეთ სწორი დაფასება (მხოლოდ დადებითი ციფრები).")
 			return
-		if not ავტომობილის_მარკა or not ავტომობილის_მოდელი or not vin_კოდი:
+		if not car_make or not car_model or not vin_code:
 			self.show_warning("გთხოვთ შეავსოთ ყველა ველი.")
 			return
 
 		vin_regex = re.compile(
 			r'^[A-HJ-NPR-Za-hj-npr-z\d]{8}[\dX][A-HJ-NPR-Za-hj-npr-zm\d]{2}\d{6}$')
 		# Basic VIN format validation
-		if not vin_regex.match(vin_კოდი):
-			confirm_vin_dialog = self.show_confirm(f"{vin_კოდი} სწორია?")
+		if not vin_regex.match(vin_code):
+			confirm_vin_dialog = self.show_confirm(f"{vin_code} სწორია?")
 			if confirm_vin_dialog == QMessageBox.Yes:
-				if not self.vin_code_exists_in_current(vin_კოდი):
+				if not self.vin_code_exists_in_current(vin_code):
 					self.accept()
 
 
 				else:
-					self.show_warning("ავტომობილი ამ VIN კოდით უკვე დამატებულია.")
+					self.show_warning("ავტომობილი ამ vin კოდით უკვე დამატებულია.")
 		else:
 			self.accept()
 
@@ -239,23 +239,23 @@ class CarEntryDialog(QDialog):
 		"""Displays a confirmation dialog and returns the user's choice."""
 		return QMessageBox.question(self, "დაადასტურე", message, QMessageBox.Yes | QMessageBox.No)
 
-	def vin_code_exists_in_current(self, vin_კოდი):
-          """Checks if the given VIN code already exists in the database."""
+	def vin_code_exists_in_current(self, vin_code):
+          """Checks if the given vin_code already exists in the database."""
           with sqlite3.connect('parking_system.db') as conn:
                cursor = conn.cursor()
-               cursor.execute("SELECT COUNT(*) FROM parking WHERE vin_კოდი = ?", (vin_კოდი,))
+               cursor.execute("SELECT COUNT(*) FROM parking WHERE vin_code = ?", (vin_code,))
                count = cursor.fetchone()[0]
           return count > 0
 
 	def get_result(self):
 		"""Retrieves the input car details from the form."""
-		return (self.ავტომობილის_მარკა_entry.text().strip().title(),
-		        self.ავტომობილის_მოდელი_entry.text().strip(),
-		        self.vin_კოდი_entry.text().strip().upper(),
-		        self.სახელი_entry.text().strip(),  # Ensure this is correctly capturing input
-		        self.გვარი_entry.text().strip(),  # Ensure this is correctly capturing input
-		        self.პირადი_ნომერი_entry.text().strip(),  # Ensure this is correctly capturing input
-		        self.ტელეფონის_ნომერი_entry.text().strip())  # Ensure this is correctly capturing input
+		return (self.make_entry.text().strip().title(),
+		        self.model_entry.text().strip(),
+		        self.vin_code_entry.text().strip().upper(),
+		        self.name_entry.text().strip(),  # Ensure this is correctly capturing input
+		        self.surname_entry.text().strip(),  # Ensure this is correctly capturing input
+		        self.ID_entry.text().strip(),  # Ensure this is correctly capturing input
+		        self.tel_entry.text().strip())  # Ensure this is correctly capturing input
 
 
 class ParkingSpot(QtWidgets.QPushButton):
@@ -264,18 +264,18 @@ class ParkingSpot(QtWidgets.QPushButton):
 
 	def __init__(self, id, parent=None):
 		super().__init__(parent)
-		self.სახელი = None
-		self.გვარი = None
-		self.პირადი_ნომერი = None
-		self.ტელეფონის_ნომერი = None
+		self.name = None
+		self.surname = None
+		self.ID = None
+		self.tel = None
 		self.id = id
 		self.db_conn = sqlite3.connect('parking_system.db')
 		self.db_conn_history = sqlite3.connect('parking_history.db')
 		self.is_occupied = False
-		self.ავტომობილის_მარკა = None
-		self.ავტომობილის_მოდელი = None
-		self.vin_კოდი = None
-		self.ჯამში_გადახდილი = None
+		self.car_make = None
+		self.car_model = None
+		self.vin_code = None
+		self.sum_paid = None
 		self.setText(f'ადგილი {self.id}')
 		self.setStyleSheet("background-color: green; color: white; font-weight: bold; font-size: 14px;")
 		self.setMinimumHeight(50)
@@ -325,18 +325,18 @@ class ParkingSpot(QtWidgets.QPushButton):
 		dialog = CarEntryDialog()
 		if dialog.exec():
 			# Get the results from the dialog
-			ავტომობილის_მარკა, ავტომობილის_მოდელი, vin_კოდი, სახელი, გვარი, პირადი_ნომერი, ტელეფონის_ნომერი = dialog.get_result()
-			ინდივიდუალური_გადასახადი = float(
-				dialog.ინდივიდუალური_გადასახადი_entry.text())  # Get individual fee from the dialog
+			car_make, car_model, vin_code, name, surname, ID, tel = dialog.get_result()
+			individual_charge = float(
+				dialog.individual_charge_entry.text())  # Get individual fee from the dialog
 
-			# Insert into the database with ინდივიდუალური_გადასახადი
+			# Insert into the database with individual_charge
 			try:
 				self.db_conn.execute(
-					'INSERT INTO parking (ავტომობილის_მარკა, ავტომობილის_მოდელი, vin_კოდი, სახელი, გვარი, პირადი_ნომერი, ტელეფონის_ნომერი, შესვლა, პარკინგის_ადგილი, ინდივიდუალური_გადასახადი) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
-					(ავტომობილის_მარკა, ავტომობილის_მოდელი, vin_კოდი, სახელი, გვარი, პირადი_ნომერი,
-					 ტელეფონის_ნომერი,
+					'INSERT INTO parking (car_make, car_model, vin_code, name, surname, ID, tel, enter, parking_spot, individual_charge) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+					(car_make, car_model, vin_code, name, surname, ID,
+					 tel,
 					 datetime.now().strftime("%Y-%m-%d"),
-					 self.id, ინდივიდუალური_გადასახადი)
+					 self.id, individual_charge)
 				)
 				self.db_conn.commit()
 				self.print_car_details(self.id, status="entry_check")
@@ -353,7 +353,7 @@ class ParkingSpot(QtWidgets.QPushButton):
 	def confirm_remove_car(self):
 		"""Initiates the car removal process from the parking spot."""
 		entry_info = self.db_conn.execute(
-			'SELECT ავტომობილის_მარკა, ავტომობილის_მოდელი, vin_კოდი, სახელი, გვარი, პირადი_ნომერი, ტელეფონის_ნომერი, შესვლა, პარკინგის_ადგილი, ინდივიდუალური_გადასახადი FROM parking WHERE პარკინგის_ადგილი = ? AND გამოსვლა IS NULL',
+			'SELECT car_make, car_model, vin_code, name, surname, ID, tel, enter, parking_spot, individual_charge FROM parking WHERE parking_spot = ? AND exit IS NULL',
 			(self.id,)).fetchone()
 
 		# Check if car information is not found or already checked out
@@ -362,15 +362,15 @@ class ParkingSpot(QtWidgets.QPushButton):
 			return
 
 		# Extract car details
-		ავტომობილის_მარკა, ავტომობილის_მოდელი, vin_კოდი, სახელი, გვარი, პირადი_ნომერი, ტელეფონის_ნომერი, შესვლა_str, პარკინგის_ადგილი, ინდივიდუალური_გადასახადი = entry_info
+		car_make, car_model, vin_code, name, surname, ID, tel, enter_str, parking_spot, individual_charge = entry_info
 
 		# Convert entry and exit timestamps to dates
-		entry_date = datetime.strptime(შესვლა_str, "%Y-%m-%d").date()
+		entry_date = datetime.strptime(enter_str, "%Y-%m-%d").date()
 		exit_date = datetime.now().date()  # This removes the time part, keeping only the date
 
-		ინდივიდუალური_გადასახადი = entry_info[-1]  # Assuming it's the last in the fetched data
+		individual_charge = entry_info[-1]  # Assuming it's the last in the fetched data
 		total_days = (exit_date - entry_date).days + 1
-		self.ჯამში_გადახდილი = total_days * ინდივიდუალური_გადასახადი
+		self.sum_paid = total_days * individual_charge
 
 		payment_info = f"""<html>
         <head>
@@ -396,12 +396,12 @@ class ParkingSpot(QtWidgets.QPushButton):
             </style>
         </head>
         <body>
-            <p><span class="label">ავტომობილი:</span> <span class="value">{ავტომობილის_მარკა} {ავტომობილის_მოდელი}</span></p>
-            <p><span class="label">VIN კოდი:</span> <span class="value">{vin_კოდი}</span></p>
-            <p><span class="label">მფლობელი:</span> <span class="value">{სახელი} {გვარი} ({პირადი_ნომერი})</span></p>
-            <p><span class="label">ტელ:</span> <span class="value">{ტელეფონის_ნომერი}</span></p>
+            <p><span class="label">ავტომობილი:</span> <span class="value">{car_make} {car_model}</span></p>
+            <p><span class="label">vin_code:</span> <span class="value">{vin_code}</span></p>
+            <p><span class="label">მფლობელი:</span> <span class="value">{name} {surname} ({ID})</span></p>
+            <p><span class="label">ტელ:</span> <span class="value">{tel}</span></p>
             <p><span class="label">ავტომობილი სადგომზე იმყოფებოდა:</span> <span class="value">{total_days} დღე</span></p>
-            <p style="margin-top:20px;"><span class="font-size:18px; font-weight:700;">სულ:</span> <span class="total-payment">{self.ჯამში_გადახდილი} ლარი</span></p>
+            <p style="margin-top:20px;"><span class="font-size:18px; font-weight:700;">სულ:</span> <span class="total-payment">{self.sum_paid} ლარი</span></p>
         </body>
         </html>"""
 
@@ -590,7 +590,7 @@ QPushButton:pressed {
 			self.exit_car()
 			dialog.accept()
 			self.print_car_details(self.id, status="exit_check")
-		# Assuming self.id contains the პარკინგის_ადგილი
+		# Assuming self.id contains the parking_spot
 
 		else:
 			msg_box = QMessageBox()
@@ -657,19 +657,19 @@ QPushButton:pressed {
 		cursor = conn.cursor()
 
 		# Selecting data from the database based on the status
-		sql_query = "SELECT ავტომობილის_მარკა, ავტომობილის_მოდელი, vin_კოდი, სახელი, გვარი, პირადი_ნომერი, შესვლა, ინდივიდუალური_გადასახადი FROM parking WHERE პარკინგის_ადგილი = ?"
+		sql_query = "SELECT car_make, car_model, vin_code, name, surname, ID, enter, individual_charge FROM parking WHERE parking_spot = ?"
 
 		cursor.execute(sql_query, (parking_spot,))
 		record = cursor.fetchone()
 		if status == "exit_check":
 			# Update the exit timestamp
-			შესვლა = datetime.strptime(record[-2], "%Y-%m-%d")
-			გამოსვლა = datetime.now()
-			total_days = (გამოსვლა.date() - შესვლა.date()).days + 1  # Including the current day
-			ჯამში_გადახდილი = total_days * record[-1]
+			enter = datetime.strptime(record[-2], "%Y-%m-%d")
+			exit = datetime.now()
+			total_days = (exit.date() - enter.date()).days + 1  # Including the current day
+			sum_paid = total_days * record[-1]
 			record = list(record)
-			record[-1] = გამოსვლა.strftime("%Y-%m-%d")
-			record.append(ჯამში_გადახდილი)
+			record[-1] = exit.strftime("%Y-%m-%d")
+			record.append(sum_paid)
 
 		if status == "entry_check":
 			record = list(record)
@@ -682,20 +682,20 @@ QPushButton:pressed {
 
 		# Print car details from the record
 		if record:
-			headings = ["მარკა", "მოდელი", "VIN კოდი", "სახელი", "გვარი", "პირადი N", "შესვლა",
-			            "გამოსვლა", "ჯამში_გადახდილი"] if status == "exit_check" else ["მარკა", "მოდელი",
-			                                                                           "VIN კოდი", "სახელი", "გვარი",
-			                                                                           "პირადი N", "შესვლა",
-			                                                                           "დღეში გადასახდელი","ადგილი"]
+			headings = ["car_make", "car_model", "vin_code", "name", "surname", "ID", "enter",
+			            "exit", "sum_paid"] if status == "exit_check" else ["car_make", "car_model",
+			                                                                           "vin_code", "name", "surname",
+			                                                                           "ID", "enter",
+			                                                                           "payed per day","parking spot"]
 			for i, (heading, value) in enumerate(zip(headings, record)):
 
-				if heading == "ადგილი":
+				if heading == "parking spot":
 					spot_id_possition = (check_height - margin - len(
 						headings) * line_height * 2 - line_height) / 1.5
 					add_multiline_text(c, f"საპარკინგე ადგილი N: {value}", margin, spot_id_possition,
 					                   universal_font_name, 14, line_height)
 				else:
-					if heading != "ჯამში_გადახდილი":
+					if heading != "sum_paid":
 						text = f"{heading}: {value}"
 						strLen = len(f"{heading}: {value}")
 						if strLen < 27:
@@ -728,7 +728,7 @@ QPushButton:pressed {
 		if status == "exit_check":
 			cursor = self.db_conn.cursor()
 
-			cursor.execute("DELETE FROM parking WHERE პარკინგის_ადგილი = ?", (self.id,))
+			cursor.execute("DELETE FROM parking WHERE parking_spot = ?", (self.id,))
 
 			self.db_conn.commit()
 
@@ -757,33 +757,33 @@ QPushButton:pressed {
 		"""Processes the car's exit from the parking spot and updates the database."""
 		with sqlite3.connect('parking_system.db') as conn:
 			entry_info = conn.execute(
-				'SELECT შესვლა, ავტომობილის_მარკა, ავტომობილის_მოდელი, vin_კოდი, სახელი, გვარი, პირადი_ნომერი, ტელეფონის_ნომერი, ინდივიდუალური_გადასახადი FROM parking WHERE პარკინგის_ადგილი = ? AND გამოსვლა IS NULL',
+				'SELECT enter, car_make, car_model, vin_code, name, surname, ID, tel, individual_charge FROM parking WHERE parking_spot = ? AND exit IS NULL',
 				(self.id,)).fetchone()
 
 			if entry_info is None:
 				self.show_warning("ავტომობილი უკვე გამოსულია სადგომიდან.")  # Car has already exited
 				return
 
-			შესვლა_str, ავტომობილის_მარკა, ავტომობილის_მოდელი, vin_კოდი, სახელი, გვარი, პირადი_ნომერი, ტელეფონის_ნომერი, ინდივიდუალური_გადასახადი = entry_info
-			შესვლა = datetime.strptime(შესვლა_str, "%Y-%m-%d")
-			გამოსვლა = datetime.now()
-			total_days = (გამოსვლა.date() - შესვლა.date()).days + 1  # Including the current day
-			ჯამში_გადახდილი = total_days * ინდივიდუალური_გადასახადი
+			enter_str, car_make, car_model, vin_code, name, surname, ID, tel, individual_charge = entry_info
+			enter = datetime.strptime(enter_str, "%Y-%m-%d")
+			exit = datetime.now()
+			total_days = (exit.date() - enter.date()).days + 1  # Including the current day
+			sum_paid = total_days * individual_charge
 
 
 			conn.execute(
-				'UPDATE parking SET გამოსვლა = ?, ჯამში_გადახდილი = ? WHERE პარკინგის_ადგილი = ? AND გამოსვლა IS NULL',
-				(გამოსვლა.strftime("%Y-%m-%d"), ჯამში_გადახდილი, self.id))
+				'UPDATE parking SET exit = ?, sum_paid = ? WHERE parking_spot = ? AND exit IS NULL',
+				(exit.strftime("%Y-%m-%d"), sum_paid, self.id))
 			conn.commit()
 
 		with sqlite3.connect('parking_history.db') as conn_history:
 			conn_history.execute(
-				'INSERT INTO parking_history (ავტომობილის_მარკა, ავტომობილის_მოდელი, vin_კოდი, სახელი, გვარი, პირადი_ნომერი, ტელეფონის_ნომერი, შესვლა, გამოსვლა, ჯამში_გადახდილი,პარკინგის_ადგილი) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
+				'INSERT INTO parking_history (car_make, car_model, vin_code, name, surname, ID, tel, enter, exit, sum_paid,parking_spot) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)',
 				(
-					ავტომობილის_მარკა, ავტომობილის_მოდელი, vin_კოდი, სახელი, გვარი, პირადი_ნომერი,
-					ტელეფონის_ნომერი,
-					შესვლა_str,
-					გამოსვლა.strftime("%Y-%m-%d"), ჯამში_გადახდილი, self.id), )
+					car_make, car_model, vin_code, name, surname, ID,
+					tel,
+					enter_str,
+					exit.strftime("%Y-%m-%d"), sum_paid, self.id), )
 
 
 
@@ -802,12 +802,12 @@ QPushButton:pressed {
 		with sqlite3.connect('parking_system.db') as conn:
 			cursor = conn.cursor()
 			car_info = cursor.execute(
-				'SELECT ავტომობილის_მარკა, ავტომობილის_მოდელი, vin_კოდი FROM parking WHERE პარკინგის_ადგილი = ? AND გამოსვლა IS NULL',
+				'SELECT car_make, car_model, vin_code FROM parking WHERE parking_spot = ? AND exit IS NULL',
 				(self.id,)
 			).fetchone()
 		if car_info:
 			self.is_occupied = True
-			self.ავტომობილის_მარკა, self.ავტომობილის_მოდელი, self.vin_კოდი = car_info
+			self.car_make, self.car_model, self.vin_code = car_info
 			# Updated styles for occupied spots
 			self.setStyleSheet("""
                     background-color: #D22F2F; /* Darker red for occupied spot */
@@ -887,19 +887,19 @@ class MainApplication(QtWidgets.QWidget):
 		cursor = conn.cursor()
 		cursor.execute('''
             CREATE TABLE IF NOT EXISTS parking (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                ავტომობილის_მარკა TEXT,
-                ავტომობილის_მოდელი TEXT,
-                vin_კოდი TEXT,
-                სახელი TEXT,
-                გვარი TEXT,
-                პირადი_ნომერი TEXT,
-                ტელეფონის_ნომერი TEXT,
-                შესვლა TEXT,
-                გამოსვლა TEXT,
-                ჯამში_გადახდილი REAL,
-                პარკინგის_ადგილი INTEGER,
-                ინდივიდუალური_გადასახადი REAL  -- New column for individual parking fee
+                N INTEGER PRIMARY KEY AUTOINCREMENT,
+                car_make TEXT,
+                car_model TEXT,
+                vin_code TEXT,
+                name TEXT,
+                surname TEXT,
+                ID TEXT,
+                tel TEXT,
+                enter TEXT,
+                exit TEXT,
+                sum_paid REAL,
+                parking_spot INTEGER,
+                individual_charge REAL  -- New column for individual parking fee
             );
         ''')
 		conn.commit()
@@ -909,19 +909,19 @@ class MainApplication(QtWidgets.QWidget):
 		cursor_history = conn_history.cursor()
 		cursor_history.execute('''
             CREATE TABLE IF NOT EXISTS parking_history (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                ავტომობილის_მარკა TEXT,
-                ავტომობილის_მოდელი TEXT,
-                vin_კოდი TEXT,
-                სახელი TEXT,
-                გვარი TEXT,
-                პირადი_ნომერი TEXT,
-                ტელეფონის_ნომერი TEXT,
-                შესვლა TEXT,
-                გამოსვლა TEXT,
-                ჯამში_გადახდილი REAL,
-                ინდივიდუალური_გადასახადი REAL,  -- New column for individual parking fee
-                პარკინგის_ადგილი INTEGER
+                N INTEGER PRIMARY KEY AUTOINCREMENT,
+                car_make TEXT,
+                car_model TEXT,
+                vin_code TEXT,
+                name TEXT,
+                surname TEXT,
+                ID TEXT,
+                tel TEXT,
+                enter TEXT,
+                exit TEXT,
+                sum_paid REAL,
+                individual_charge REAL,  -- New column for individual parking fee
+                parking_spot INTEGER
             );
         ''')
 		conn_history.commit()
@@ -1045,7 +1045,7 @@ class MainApplication(QtWidgets.QWidget):
 		today = datetime.now().date()
 		conn = sqlite3.connect('parking_history.db')
 		cursor = conn.cursor()
-		cursor.execute("SELECT SUM(ჯამში_გადახდილი) FROM parking_history WHERE DATE(გამოსვლა) = ?", (today,))
+		cursor.execute("SELECT SUM(sum_paid) FROM parking_history WHERE DATE(exit) = ?", (today,))
 		today_earnings = cursor.fetchone()[0]
 		conn.close()
 		return today_earnings if today_earnings else 0
@@ -1096,14 +1096,10 @@ class PasswordDialog(QDialog):
         layout.addWidget(ok_button)
 def main():
 	"""Entry point of the application. Initializes and starts the PyQt application."""
-	try:
-		app = QtWidgets.QApplication(sys.argv)
-		window = MainApplication()
-		window.showFullScreen()
-		sys.exit(app.exec())
-	except Exception as e:
-		print(e)
-
+	app = QtWidgets.QApplication(sys.argv)
+	window = MainApplication()
+	window.showFullScreen()
+	sys.exit(app.exec())
 
 if __name__ == '__main__':
 	main()
