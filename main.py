@@ -1,5 +1,5 @@
-import os
 import re
+import os
 import sys
 import subprocess
 import sqlite3
