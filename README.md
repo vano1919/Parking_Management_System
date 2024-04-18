@@ -9,7 +9,7 @@ Welcome to ParkMaster - a Python-based parking management framework written with
 - **Comprehensive Data Validation**: Ensures that all user inputs are correct and valid for reliable data storage.
 - **Cross-Platform Compatibility**: Supports various operating systems thanks to the Python-based development.
 - **Detailed Record-Keeping**: Generates PDF receipts and maintains a historical database of all parking transactions.
-- **Printing**: Makes possible to print receipt after custimizing logos and naming you can use this feature personally.
+- **Printing**: Makes possible to print receipt after custimizing logos and naming you can use this feature personally. To use this feature you should have file with logos and file with prefered fonts.
 - **Secure Data Management**: Implements best practices for data security, including encrypted database storage.
 - **Beckup**: Backuping databases databases on to another directory, deletes old* backups.  
 
